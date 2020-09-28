@@ -1,4 +1,4 @@
-Point_0,Point_1,Point_2
+Points_0,Points_1,Points_2
 0,0,0
 1,1,1
 2,2,2
