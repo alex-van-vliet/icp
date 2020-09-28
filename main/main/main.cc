@@ -1,6 +1,6 @@
-#include <iostream>
+#include "libcpu/test.hh"
 
 int main()
 {
-    std::cout << "Hello, world!" << std::endl;
+    libcpu::test();
 }
