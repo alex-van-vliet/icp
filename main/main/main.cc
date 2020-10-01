@@ -1,6 +1,6 @@
-#include "libcpu/point-3d.hh"
-
 #include <iostream>
+
+#include "libcpu/point-3d.hh"
 
 int main(int argc, char* argv[])
 {
@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    for (const auto& point : libcpu::read_csv(argv[1],
-        "Points_0", "Points_1", "Points_2"))
+    for (const auto& point :
+         libcpu::read_csv(argv[1], "Points_0", "Points_1", "Points_2"))
         std::cout << point << std::endl;
 }

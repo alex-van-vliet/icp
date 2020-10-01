@@ -7,8 +7,7 @@
 namespace
 {
     auto parse_line(const std::string& line, size_t x_field_id,
-        size_t y_field_id, size_t z_field_id)
-    -> libcpu::Point3D
+                    size_t y_field_id, size_t z_field_id) -> libcpu::Point3D
     {
         size_t max_id = std::max(std::max(x_field_id, y_field_id), z_field_id);
 
@@ -25,11 +24,13 @@ namespace
             {
                 std::string token(line, start, end - start);
                 point.x = std::stof(token);
-            } else if (i == y_field_id)
+            }
+            else if (i == y_field_id)
             {
                 std::string token(line, start, end - start);
                 point.y = std::stof(token);
-            } else if (i == z_field_id)
+            }
+            else if (i == z_field_id)
             {
                 std::string token(line, start, end - start);
                 point.z = std::stof(token);
@@ -48,8 +49,8 @@ namespace
     }
 
     auto parse_header(const std::string& header, const std::string& x_field,
-        const std::string& y_field, const std::string& z_field)
-    -> std::tuple<size_t, size_t, size_t>
+                      const std::string& y_field, const std::string& z_field)
+        -> std::tuple<size_t, size_t, size_t>
     {
         size_t x_field_id = -1;
         size_t y_field_id = -1;
@@ -75,8 +76,7 @@ namespace
             i += 1;
         } while (end != std::string::npos);
 
-        if ((x_field_id == size_t(-1))
-            or (y_field_id == size_t(-1))
+        if ((x_field_id == size_t(-1)) or (y_field_id == size_t(-1))
             or (z_field_id == size_t(-1)))
         {
             throw std::runtime_error("could not find one of the coordinates");
@@ -84,19 +84,19 @@ namespace
 
         return {x_field_id, y_field_id, z_field_id};
     }
-}
+} // namespace
 
 namespace libcpu
 {
-    auto operator<<(std::ostream& os, const Point3D& point)
-    -> std::ostream&
+    auto operator<<(std::ostream& os, const Point3D& point) -> std::ostream&
     {
-        return os << "(" << point.x << ", " << point.y << ", " << point.z << ")";
+        return os << "(" << point.x << ", " << point.y << ", " << point.z
+                  << ")";
     }
 
     auto read_csv(const std::string& path, const std::string& x_field,
-        const std::string& y_field, const std::string& z_field)
-    -> std::vector<Point3D>
+                  const std::string& y_field, const std::string& z_field)
+        -> std::vector<Point3D>
     {
         std::vector<Point3D> points;
 
@@ -118,9 +118,10 @@ namespace libcpu
         while (std::getline(stream, line))
         {
             points.push_back(parse_line(line, std::get<0>(fields_id),
-                std::get<1>(fields_id), std::get<2>(fields_id)));
+                                        std::get<1>(fields_id),
+                                        std::get<2>(fields_id)));
         }
 
         return points;
     }
-}
+} // namespace libcpu
