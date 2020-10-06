@@ -1,6 +1,5 @@
-#include "matrix.hh"
-
 #include "gtest/gtest.h"
+#include "matrix.hh"
 
 namespace
 {
@@ -35,4 +34,4 @@ namespace
         EXPECT_EQ(1, matrix.get(1, 1));
         EXPECT_EQ(0, matrix.get(1, 0));
     }
-}
+} // namespace
