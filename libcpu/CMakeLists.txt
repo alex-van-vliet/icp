@@ -9,3 +9,5 @@ add_executable(libcpu_tests
   libcpu/utils/test_matrix.cc
 )
 target_link_libraries(libcpu_tests PRIVATE libcpu gtest_main)
+
+add_test(libcpu_tests libcpu_tests)

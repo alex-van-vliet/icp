@@ -17,9 +17,9 @@ namespace utils
             ** j: columns
             */
             Matrix(size_t i, size_t j, DATA default_val = 0)
+                : lines(i),
+                  columns(j)
             {
-                lines = i;
-                columns = j;
                 values = std::vector<std::vector<DATA>>(i, std::vector<DATA>(j, default_val));
             }
 
@@ -27,10 +27,11 @@ namespace utils
 
             void set(size_t i, size_t j, DATA val);
 
+            const size_t lines;
+            const size_t columns;
+
         private:
             mat values;
-            size_t lines;
-            size_t columns;
     };
 
     template<typename DATA>

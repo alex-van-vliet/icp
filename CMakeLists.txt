@@ -14,5 +14,7 @@ if (NOT GoogleTest_POPULATED)
     add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 endif ()
 
+enable_testing()
+
 add_subdirectory(libcpu)
 add_subdirectory(main)

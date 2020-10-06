@@ -11,6 +11,14 @@ namespace
         EXPECT_EQ(0, matrix.get(0, 0));
     }
 
+    TEST(MatrixTest, properties)
+    {
+        auto matrix = utils::Matrix<int>(2, 3);
+
+        EXPECT_EQ(2, matrix.lines);
+        EXPECT_EQ(3, matrix.columns);
+    }
+
     TEST(MatrixTest, set_small)
     {
         auto matrix = utils::Matrix<int>(1, 1);
