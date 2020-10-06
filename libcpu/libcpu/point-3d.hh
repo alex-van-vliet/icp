@@ -41,4 +41,6 @@ namespace libcpu
     Point3D dot(const utils::Matrix<float>& a, const Point3D& b);
 
     Point3D subtract(const Point3D& a, const Point3D& b);
+
+    Point3D scale(float a, const Point3D& b);
 } // namespace libcpu

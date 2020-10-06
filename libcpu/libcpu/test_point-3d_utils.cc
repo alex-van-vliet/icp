@@ -108,4 +108,14 @@ namespace
         EXPECT_FLOAT_EQ(res.y, 0);
         EXPECT_FLOAT_EQ(res.z, 2);
     }
+
+    TEST(Points3DTest, res)
+    {
+        Point3D a {1, 2, 3};
+        auto res = scale(2, a);
+
+        EXPECT_FLOAT_EQ(res.x, 2);
+        EXPECT_FLOAT_EQ(res.y, 4);
+        EXPECT_FLOAT_EQ(res.z, 6);
+    }
 }

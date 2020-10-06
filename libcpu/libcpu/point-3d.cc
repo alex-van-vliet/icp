@@ -250,4 +250,13 @@ namespace libcpu
             a.z - b.z,
         };
     }
+
+    Point3D scale(float a, const Point3D& b)
+    {
+        return {
+            b.x * a,
+            b.y * a,
+            b.z * a,
+        };
+    }
 } // namespace libcpu
