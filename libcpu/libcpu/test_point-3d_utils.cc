@@ -28,7 +28,7 @@ namespace
         Point3D c {3, 3, 3};
         Point3D d {4, 4, 4};
 
-        std::vector<Point3D> v{b, c, d};
+        point_list v{b, c, d};
 
         EXPECT_FLOAT_EQ(libcpu::closest(a, v), 0);
     }
@@ -40,7 +40,7 @@ namespace
         Point3D c {3, 3, 3};
         Point3D d {4, 4, 4};
 
-        std::vector<Point3D> v{a, b, c, d};
+        point_list v{a, b, c, d};
 
         auto result = closest(v, v);
 
@@ -56,8 +56,25 @@ namespace
         Point3D b {2, 2, 2};
         Point3D c {3, 3, 3};
 
-        std::vector<Point3D> v{a, b, c};
+        point_list v{a, b, c};
 
         compare_points(mean(v), b);
+    }
+
+    TEST(Points3DTest, subtract)
+    {
+        Point3D a {1, 1, 1};
+        Point3D b {2, 2, 2};
+        Point3D c {3, 3, 3};
+
+        point_list v{b, c};
+        point_list expected{a, b};
+
+        auto result = subtract(v, a);
+
+        ASSERT_EQ(result.size(), expected.size());
+
+        for (size_t i = 0; i < result.size(); i++)
+            compare_points(result[i], expected[i]);
     }
 }

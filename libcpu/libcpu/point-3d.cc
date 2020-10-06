@@ -9,7 +9,7 @@
 namespace
 {
     auto parse_line(const std::string& line, size_t x_field_id,
-                    size_t y_field_id, size_t z_field_id) -> libcpu::Point3D
+        size_t y_field_id, size_t z_field_id) -> libcpu::Point3D
     {
         size_t max_id = std::max(std::max(x_field_id, y_field_id), z_field_id);
 
@@ -26,13 +26,11 @@ namespace
             {
                 std::string token(line, start, end - start);
                 point.x = std::stof(token);
-            }
-            else if (i == y_field_id)
+            } else if (i == y_field_id)
             {
                 std::string token(line, start, end - start);
                 point.y = std::stof(token);
-            }
-            else if (i == z_field_id)
+            } else if (i == z_field_id)
             {
                 std::string token(line, start, end - start);
                 point.z = std::stof(token);
@@ -51,8 +49,8 @@ namespace
     }
 
     auto parse_header(const std::string& header, const std::string& x_field,
-                      const std::string& y_field, const std::string& z_field)
-        -> std::tuple<size_t, size_t, size_t>
+        const std::string& y_field, const std::string& z_field)
+    -> std::tuple<size_t, size_t, size_t>
     {
         size_t x_field_id = -1;
         size_t y_field_id = -1;
@@ -97,8 +95,8 @@ namespace libcpu
     }
 
     auto read_csv(const std::string& path, const std::string& x_field,
-                  const std::string& y_field, const std::string& z_field)
-        -> point_list
+        const std::string& y_field, const std::string& z_field)
+    -> point_list
     {
         point_list points;
 
@@ -120,8 +118,8 @@ namespace libcpu
         while (std::getline(stream, line))
         {
             points.push_back(parse_line(line, std::get<0>(fields_id),
-                                        std::get<1>(fields_id),
-                                        std::get<2>(fields_id)));
+                std::get<1>(fields_id),
+                std::get<2>(fields_id)));
         }
 
         return points;
@@ -143,7 +141,7 @@ namespace libcpu
         size_t ret = 0;
         float dist = squared_distance(a, v[ret]);
 
-        for(size_t i = 1; i < v.size(); i++)
+        for (size_t i = 1; i < v.size(); i++)
         {
             float tmp_dist = squared_distance(a, v[i]);
             if (tmp_dist < dist)
@@ -177,4 +175,21 @@ namespace libcpu
 
         return res;
     }
+
+    point_list subtract(const point_list& points, const Point3D& mean)
+    {
+        point_list centered;
+        centered.reserve(points.size());
+
+        for (const auto& point : points)
+        {
+            centered.push_back({
+                point.x - mean.x,
+                point.y - mean.y,
+                point.z - mean.z,
+            });
+        }
+
+        return centered;
+    };
 } // namespace libcpu
