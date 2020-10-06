@@ -166,4 +166,15 @@ namespace libcpu
 
         return v;
     }
+
+    Point3D mean(const point_list& a)
+    {
+        Point3D res = {0};
+        size_t len = a.size();
+
+        for (const auto& value : a)
+            res = {res.x + value.x / len, res.y + value.y / len, res.z + value.z / len};
+
+        return res;
+    }
 } // namespace libcpu

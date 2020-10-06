@@ -26,4 +26,6 @@ namespace libcpu
     size_t closest(const Point3D& a, const point_list& v);
 
     point_list closest(const point_list& a, const point_list& b);
+
+    Point3D mean(const point_list& a);
 } // namespace libcpu
