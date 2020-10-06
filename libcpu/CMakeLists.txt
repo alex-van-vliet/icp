@@ -5,5 +5,7 @@ add_library(libcpu
 target_include_directories(libcpu PUBLIC .)
 target_include_directories(libcpu PUBLIC libcpu/utils)
 
-# add_executable(libcpu_tests SOURCES)
-# target_link_libraries(libcpu_tests PRIVATE libcpu gtest_main)
+add_executable(libcpu_tests
+  libcpu/utils/test_matrix.cc
+)
+target_link_libraries(libcpu_tests PRIVATE libcpu gtest_main)
