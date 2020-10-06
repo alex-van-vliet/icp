@@ -3,7 +3,7 @@ repos:
   hooks:
   - id: clang-format
     name: coding style
-    entry: clang-format
+    entry: clang-format -i
     language: system
     files: \.(cc|hh|cu)$
 - repo: https://github.com/pre-commit/pre-commit-hooks
