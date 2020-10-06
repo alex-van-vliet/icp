@@ -34,4 +34,12 @@ namespace
         EXPECT_EQ(1, matrix.get(1, 1));
         EXPECT_EQ(0, matrix.get(1, 0));
     }
+
+    TEST(MatrixTest, random)
+    {
+        auto matrix = utils::random<float>(1, 2);
+
+        EXPECT_EQ(1, matrix.lines);
+        EXPECT_EQ(2, matrix.columns);
+    }
 } // namespace

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <stdlib.h>
 #include <vector>
 
 namespace utils
@@ -105,5 +106,21 @@ namespace utils
     Matrix<DATA> eye(size_t n)
     {
         return eye<DATA>(n, n);
+    }
+
+    template <typename DATA>
+    Matrix<DATA> random(size_t n, size_t m)
+    {
+        auto matrix = Matrix<DATA>(n, m);
+
+        for (size_t i = 0; i < matrix.lines; ++i)
+        {
+            for (size_t j = 0; j < matrix.columns; ++j)
+            {
+                matrix.set(i, j, DATA(rand()) / RAND_MAX);
+            }
+        }
+
+        return matrix;
     }
 } // namespace utils
