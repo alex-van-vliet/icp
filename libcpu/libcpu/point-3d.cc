@@ -4,6 +4,8 @@
 #include <iostream>
 #include <tuple>
 
+#include <assert.h>
+
 namespace
 {
     auto parse_line(const std::string& line, size_t x_field_id,
@@ -123,5 +125,45 @@ namespace libcpu
         }
 
         return points;
+    }
+
+    float squared_distance(const Point3D& a, const Point3D& b)
+    {
+        float x = a.x - b.x;
+        float y = a.y - b.y;
+        float z = a.z - b.z;
+
+        return x * x + y * y + z * z;
+    }
+
+    size_t closest(const Point3D& a, const std::vector<Point3D>& v)
+    {
+        assert(v.size() > 0);
+
+        size_t ret = 0;
+        float dist = squared_distance(a, v[ret]);
+
+        for(size_t i = 1; i < v.size(); i++)
+        {
+            float tmp_dist = squared_distance(a, v[i]);
+            if (tmp_dist < dist)
+            {
+                dist = tmp_dist;
+                ret = i;
+            }
+        }
+
+        return ret;
+    }
+
+    std::vector<Point3D> closest(const std::vector<Point3D>& a, const std::vector<Point3D>& b)
+    {
+        std::vector<Point3D> v;
+        v.reserve(a.size());
+
+        for (const auto& value: a)
+            v.push_back(b[closest(value, b)]);
+
+        return v;
     }
 } // namespace libcpu
