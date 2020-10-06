@@ -77,4 +77,14 @@ namespace
         for (size_t i = 0; i < result.size(); i++)
             compare_points(result[i], expected[i]);
     }
+
+    TEST(Points3DTest, sum_of_squared_norms)
+    {
+        Point3D a {1, 1, 1};
+        Point3D b {2, 2, 2};
+
+        point_list v{a, b};
+
+        EXPECT_FLOAT_EQ(15, sum_of_squared_norms(v));
+    }
 }

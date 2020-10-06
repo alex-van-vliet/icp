@@ -30,6 +30,8 @@ namespace libcpu
 
     Point3D mean(const point_list& a);
 
+    float sum_of_squared_norms(const point_list& a);
+
     point_list subtract(const point_list& points, const Point3D& mean);
 
     std::tuple<float, float, float, float, float, float, float, float, float>

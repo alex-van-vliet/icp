@@ -220,4 +220,14 @@ namespace libcpu
 
         return {sxx, sxy, sxz, syx, syy, syz, szx, szy, szz};
     }
+
+    float sum_of_squared_norms(const point_list& a)
+    {
+        float sum = 0;
+
+        for (const auto& value : a)
+            sum += value.x * value.x + value.y * value.y + value.z * value.z;
+
+        return sum;
+    }
 } // namespace libcpu
