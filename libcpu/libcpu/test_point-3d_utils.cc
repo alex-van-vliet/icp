@@ -87,4 +87,14 @@ namespace
 
         EXPECT_FLOAT_EQ(15, sum_of_squared_norms(v));
     }
+
+    TEST(Points3DTest, dot)
+    {
+        Point3D a {1, 2, 3};
+        auto res = dot(utils::eye<float>(3, 3), a);
+
+        EXPECT_FLOAT_EQ(res.x, 1);
+        EXPECT_FLOAT_EQ(res.y, 2);
+        EXPECT_FLOAT_EQ(res.z, 3);
+    }
 }

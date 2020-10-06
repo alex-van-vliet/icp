@@ -4,6 +4,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include "matrix.hh"
 
 namespace libcpu
 {
@@ -36,4 +37,6 @@ namespace libcpu
 
     std::tuple<float, float, float, float, float, float, float, float, float>
     find_covariance(const point_list& p_centered, const point_list& y_centered);
+
+    Point3D dot(const utils::Matrix<float>& a, const Point3D& b);
 } // namespace libcpu
