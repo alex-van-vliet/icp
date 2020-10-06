@@ -1,5 +1,6 @@
 add_library(libcpu
   libcpu/point-3d.cc libcpu/point-3d.hh
+  libcpu/icp.cc libcpu/icp.hh
   libcpu/utils/matrix.cc libcpu/utils/matrix.hh
 )
 target_compile_features(libcpu PUBLIC cxx_std_17)
