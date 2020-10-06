@@ -123,4 +123,25 @@ namespace utils
 
         return matrix;
     }
+
+    template <typename DATA>
+    auto dot(const Matrix<DATA>& a, const Matrix<DATA>& b) -> Matrix<DATA>
+    {
+        assert(a.columns == b.lines);
+
+        Matrix<DATA> result(a.lines, b.columns);
+
+        for (size_t i = 0; i < result.lines; ++i)
+        {
+            for (size_t j = 0; j < result.columns; ++j)
+            {
+                DATA val = 0;
+                for (size_t k = 0; k < a.columns; ++k)
+                    val += a.get(i, k) * b.get(k, j);
+                result.set(i, j, val);
+            }
+        }
+
+        return result;
+    }
 } // namespace utils

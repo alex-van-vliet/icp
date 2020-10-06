@@ -42,4 +42,28 @@ namespace
         EXPECT_EQ(1, matrix.lines);
         EXPECT_EQ(2, matrix.columns);
     }
+
+    TEST(MatrixTest, dot_right)
+    {
+        auto matrix = utils::random<float>(3, 4);
+
+        auto res = utils::dot(matrix, utils::eye<float>(4));
+        ASSERT_EQ(matrix.lines, res.lines);
+        ASSERT_EQ(matrix.columns, res.columns);
+        for (size_t i = 0; i < matrix.lines; ++i)
+            for (size_t j = 0; j < matrix.columns; ++j)
+                EXPECT_FLOAT_EQ(matrix.get(i, j), res.get(i, j));
+    }
+
+    TEST(MatrixTest, dot_left)
+    {
+        auto matrix = utils::random<float>(3, 4);
+
+        auto res = utils::dot(utils::eye<float>(3), matrix);
+        ASSERT_EQ(matrix.lines, res.lines);
+        ASSERT_EQ(matrix.columns, res.columns);
+        for (size_t i = 0; i < matrix.lines; ++i)
+            for (size_t j = 0; j < matrix.columns; ++j)
+                EXPECT_FLOAT_EQ(matrix.get(i, j), res.get(i, j));
+    }
 } // namespace
