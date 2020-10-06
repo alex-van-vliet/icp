@@ -98,9 +98,9 @@ namespace libcpu
 
     auto read_csv(const std::string& path, const std::string& x_field,
                   const std::string& y_field, const std::string& z_field)
-        -> std::vector<Point3D>
+        -> point_list
     {
-        std::vector<Point3D> points;
+        point_list points;
 
         std::ifstream stream(path);
         if (!stream)
@@ -136,7 +136,7 @@ namespace libcpu
         return x * x + y * y + z * z;
     }
 
-    size_t closest(const Point3D& a, const std::vector<Point3D>& v)
+    size_t closest(const Point3D& a, const point_list& v)
     {
         assert(v.size() > 0);
 
@@ -156,9 +156,9 @@ namespace libcpu
         return ret;
     }
 
-    std::vector<Point3D> closest(const std::vector<Point3D>& a, const std::vector<Point3D>& b)
+    point_list closest(const point_list& a, const point_list& b)
     {
-        std::vector<Point3D> v;
+        point_list v;
         v.reserve(a.size());
 
         for (const auto& value: a)
