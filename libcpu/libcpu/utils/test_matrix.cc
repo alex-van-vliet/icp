@@ -75,4 +75,17 @@ namespace
         EXPECT_FLOAT_EQ(matrix.get(0, 0), 1);
         EXPECT_FLOAT_EQ(matrix.get(1, 0), 0);
     }
+
+    TEST(MatrixTest, eigenvector)
+    {
+        auto matrix = utils::eye<float>(4);
+        matrix.set(0, 0, 2);
+
+        auto res = matrix.largest_eigenvector<1000>();
+
+        EXPECT_FLOAT_EQ(res.get(0, 0), 1);
+        EXPECT_FLOAT_EQ(res.get(1, 0), 0);
+        EXPECT_FLOAT_EQ(res.get(2, 0), 0);
+        EXPECT_FLOAT_EQ(res.get(3, 0), 0);
+    }
 } // namespace

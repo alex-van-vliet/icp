@@ -63,6 +63,9 @@ namespace utils
 
         void set(size_t i, size_t j, DATA val);
 
+        template <int nb_iter>
+        Matrix<DATA> largest_eigenvector();
+
         void normalize();
 
         const size_t lines;
@@ -168,5 +171,22 @@ namespace utils
                 set(i, j, get(i, j) / norm);
             }
         }
+    }
+
+    template <typename DATA>
+    template <int nb_iter>
+    auto Matrix<DATA>::largest_eigenvector() -> Matrix<DATA>
+    {
+        assert(lines == columns);
+        auto b = random<DATA>(lines, 1);
+
+        // TODO: check update
+        for (int i = 0; i < nb_iter; ++i)
+        {
+            b = dot(*this, b);
+            b.normalize();
+        }
+
+        return b;
     }
 } // namespace utils
