@@ -1,15 +1,14 @@
 #include "libcpu/point-3d.hh"
 
+#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <tuple>
 
-#include <assert.h>
-
 namespace
 {
     auto parse_line(const std::string& line, size_t x_field_id,
-        size_t y_field_id, size_t z_field_id) -> libcpu::Point3D
+                    size_t y_field_id, size_t z_field_id) -> libcpu::Point3D
     {
         size_t max_id = std::max(std::max(x_field_id, y_field_id), z_field_id);
 
@@ -26,11 +25,13 @@ namespace
             {
                 std::string token(line, start, end - start);
                 point.x = std::stof(token);
-            } else if (i == y_field_id)
+            }
+            else if (i == y_field_id)
             {
                 std::string token(line, start, end - start);
                 point.y = std::stof(token);
-            } else if (i == z_field_id)
+            }
+            else if (i == z_field_id)
             {
                 std::string token(line, start, end - start);
                 point.z = std::stof(token);
@@ -49,8 +50,8 @@ namespace
     }
 
     auto parse_header(const std::string& header, const std::string& x_field,
-        const std::string& y_field, const std::string& z_field)
-    -> std::tuple<size_t, size_t, size_t>
+                      const std::string& y_field, const std::string& z_field)
+        -> std::tuple<size_t, size_t, size_t>
     {
         size_t x_field_id = -1;
         size_t y_field_id = -1;
@@ -95,8 +96,8 @@ namespace libcpu
     }
 
     auto read_csv(const std::string& path, const std::string& x_field,
-        const std::string& y_field, const std::string& z_field)
-    -> point_list
+                  const std::string& y_field, const std::string& z_field)
+        -> point_list
     {
         point_list points;
 
@@ -118,8 +119,8 @@ namespace libcpu
         while (std::getline(stream, line))
         {
             points.push_back(parse_line(line, std::get<0>(fields_id),
-                std::get<1>(fields_id),
-                std::get<2>(fields_id)));
+                                        std::get<1>(fields_id),
+                                        std::get<2>(fields_id)));
         }
 
         return points;
@@ -159,7 +160,7 @@ namespace libcpu
         point_list v;
         v.reserve(a.size());
 
-        for (const auto& value: a)
+        for (const auto& value : a)
             v.push_back(b[closest(value, b)]);
 
         return v;
@@ -171,7 +172,8 @@ namespace libcpu
         size_t len = a.size();
 
         for (const auto& value : a)
-            res = {res.x + value.x / len, res.y + value.y / len, res.z + value.z / len};
+            res = {res.x + value.x / len, res.y + value.y / len,
+                   res.z + value.z / len};
 
         return res;
     }
@@ -191,5 +193,31 @@ namespace libcpu
         }
 
         return centered;
-    };
+    }
+
+    std::tuple<float, float, float, float, float, float, float, float, float>
+    find_covariance(const point_list& p_centered, const point_list& y_centered)
+    {
+        float sxx = 0, sxy = 0, sxz = 0, syx = 0, syy = 0, syz = 0, szx = 0,
+              szy = 0, szz = 0;
+
+        for (size_t i = 0; i < p_centered.size(); ++i)
+        {
+#define ADDPROD(FIRST_COORD, SECOND_COORD)                                     \
+    s##FIRST_COORD##SECOND_COORD +=                                            \
+        (p_centered[i].FIRST_COORD) * (y_centered[i].SECOND_COORD)
+            ADDPROD(x, x);
+            ADDPROD(x, y);
+            ADDPROD(x, z);
+            ADDPROD(y, x);
+            ADDPROD(y, y);
+            ADDPROD(y, z);
+            ADDPROD(z, x);
+            ADDPROD(z, y);
+            ADDPROD(z, z);
+#undef ADDPROD
+        }
+
+        return {sxx, sxy, sxz, syx, syy, syz, szx, szy, szz};
+    }
 } // namespace libcpu

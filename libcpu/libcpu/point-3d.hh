@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace libcpu
@@ -30,4 +31,7 @@ namespace libcpu
     Point3D mean(const point_list& a);
 
     point_list subtract(const point_list& points, const Point3D& mean);
+
+    std::tuple<float, float, float, float, float, float, float, float, float>
+    find_covariance(const point_list& p_centered, const point_list& y_centered);
 } // namespace libcpu
