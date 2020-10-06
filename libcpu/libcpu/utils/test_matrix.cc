@@ -88,4 +88,16 @@ namespace
         EXPECT_FLOAT_EQ(res.get(2, 0), 0);
         EXPECT_FLOAT_EQ(res.get(3, 0), 0);
     }
+
+    TEST(MatrixTest, submatrix)
+    {
+        auto matrix = utils::random<float>(4, 4);
+        auto res = matrix.submatrix(1, 4, 1, 4);
+
+        ASSERT_EQ(3, res.lines);
+        ASSERT_EQ(3, res.columns);
+        for (size_t i = 0; i < res.lines; ++i)
+            for (size_t j = 0; j < res.columns; ++j)
+                EXPECT_FLOAT_EQ(matrix.get(i + 1, j + 1), res.get(i, j));
+    }
 } // namespace

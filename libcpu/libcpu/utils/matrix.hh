@@ -68,6 +68,9 @@ namespace utils
 
         void normalize();
 
+        Matrix<DATA> submatrix(size_t i_start, size_t i_end, size_t j_start,
+                               size_t j_end);
+
         const size_t lines;
         const size_t columns;
 
@@ -188,5 +191,18 @@ namespace utils
         }
 
         return b;
+    }
+
+    template <typename DATA>
+    auto Matrix<DATA>::submatrix(size_t i_start, size_t i_end, size_t j_start,
+                                 size_t j_end) -> Matrix<DATA>
+    {
+        Matrix<DATA> res(i_end - i_start, j_end - j_start);
+
+        for (size_t i = 0; i < res.lines; ++i)
+            for (size_t j = 0; j < res.columns; ++j)
+                res.set(i, j, get(i_start + i, j_start + j));
+
+        return res;
     }
 } // namespace utils
