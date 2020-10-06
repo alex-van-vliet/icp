@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <vector>
 
@@ -62,6 +63,7 @@ namespace utils
 
         void set(size_t i, size_t j, DATA val);
 
+        void normalize();
 
         const size_t lines;
         const size_t columns;
@@ -143,5 +145,28 @@ namespace utils
         }
 
         return result;
+    }
+
+    template <typename DATA>
+    void Matrix<DATA>::normalize()
+    {
+        DATA norm = 0;
+        for (size_t i = 0; i < lines; ++i)
+        {
+            for (size_t j = 0; j < columns; ++j)
+            {
+                float val = get(i, j);
+                norm += val * val;
+            }
+        }
+        norm = sqrt(norm);
+
+        for (size_t i = 0; i < lines; ++i)
+        {
+            for (size_t j = 0; j < columns; ++j)
+            {
+                set(i, j, get(i, j) / norm);
+            }
+        }
     }
 } // namespace utils

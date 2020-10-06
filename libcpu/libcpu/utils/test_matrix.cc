@@ -66,4 +66,13 @@ namespace
             for (size_t j = 0; j < matrix.columns; ++j)
                 EXPECT_FLOAT_EQ(matrix.get(i, j), res.get(i, j));
     }
+
+    TEST(MatrixTest, normalize)
+    {
+        auto matrix = utils::eye<float>(2, 1);
+        matrix.normalize();
+
+        EXPECT_FLOAT_EQ(matrix.get(0, 0), 1);
+        EXPECT_FLOAT_EQ(matrix.get(1, 0), 0);
+    }
 } // namespace
