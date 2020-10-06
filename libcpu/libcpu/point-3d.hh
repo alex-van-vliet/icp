@@ -39,4 +39,6 @@ namespace libcpu
     find_covariance(const point_list& p_centered, const point_list& y_centered);
 
     Point3D dot(const utils::Matrix<float>& a, const Point3D& b);
+
+    Point3D subtract(const Point3D& a, const Point3D& b);
 } // namespace libcpu

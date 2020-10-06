@@ -97,4 +97,15 @@ namespace
         EXPECT_FLOAT_EQ(res.y, 2);
         EXPECT_FLOAT_EQ(res.z, 3);
     }
+
+    TEST(Points3DTest, subtract_point)
+    {
+        Point3D a {1, 2, 3};
+        Point3D b {3, 2, 1};
+        auto res = subtract(a, b);
+
+        EXPECT_FLOAT_EQ(res.x, -2);
+        EXPECT_FLOAT_EQ(res.y, 0);
+        EXPECT_FLOAT_EQ(res.z, 2);
+    }
 }

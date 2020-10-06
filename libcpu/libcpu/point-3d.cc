@@ -241,4 +241,13 @@ namespace libcpu
             a.get(2, 0) * b.x + a.get(2, 1) * b.y + a.get(2, 2) * b.z,
         };
     }
+
+    Point3D subtract(const Point3D& a, const Point3D& b)
+    {
+        return {
+            a.x - b.x,
+            a.y - b.y,
+            a.z - b.z,
+        };
+    }
 } // namespace libcpu
