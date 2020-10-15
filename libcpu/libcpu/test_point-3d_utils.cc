@@ -1,6 +1,5 @@
-#include "point-3d.hh"
-
 #include "gtest/gtest.h"
+#include "point-3d.hh"
 
 namespace
 {
@@ -15,18 +14,18 @@ namespace
 
     TEST(Points3DTest, squared_dist)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
 
         EXPECT_FLOAT_EQ(libcpu::squared_distance(a, b), 3.);
     }
 
     TEST(Points3DTest, closest)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
-        Point3D c {3, 3, 3};
-        Point3D d {4, 4, 4};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
+        Point3D c{3, 3, 3};
+        Point3D d{4, 4, 4};
 
         point_list v{b, c, d};
 
@@ -35,10 +34,10 @@ namespace
 
     TEST(Points3DTest, closest_pairing)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
-        Point3D c {3, 3, 3};
-        Point3D d {4, 4, 4};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
+        Point3D c{3, 3, 3};
+        Point3D d{4, 4, 4};
 
         point_list v{a, b, c, d};
 
@@ -52,9 +51,9 @@ namespace
 
     TEST(Points3DTest, mean)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
-        Point3D c {3, 3, 3};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
+        Point3D c{3, 3, 3};
 
         point_list v{a, b, c};
 
@@ -63,9 +62,9 @@ namespace
 
     TEST(Points3DTest, subtract)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
-        Point3D c {3, 3, 3};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
+        Point3D c{3, 3, 3};
 
         point_list v{b, c};
         point_list expected{a, b};
@@ -80,8 +79,8 @@ namespace
 
     TEST(Points3DTest, sum_of_squared_norms)
     {
-        Point3D a {1, 1, 1};
-        Point3D b {2, 2, 2};
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
 
         point_list v{a, b};
 
@@ -90,7 +89,7 @@ namespace
 
     TEST(Points3DTest, dot)
     {
-        Point3D a {1, 2, 3};
+        Point3D a{1, 2, 3};
         auto res = dot(utils::eye<float>(3, 3), a);
 
         EXPECT_FLOAT_EQ(res.x, 1);
@@ -100,8 +99,8 @@ namespace
 
     TEST(Points3DTest, subtract_point)
     {
-        Point3D a {1, 2, 3};
-        Point3D b {3, 2, 1};
+        Point3D a{1, 2, 3};
+        Point3D b{3, 2, 1};
         auto res = subtract(a, b);
 
         EXPECT_FLOAT_EQ(res.x, -2);
@@ -111,11 +110,11 @@ namespace
 
     TEST(Points3DTest, res)
     {
-        Point3D a {1, 2, 3};
+        Point3D a{1, 2, 3};
         auto res = scale(2, a);
 
         EXPECT_FLOAT_EQ(res.x, 2);
         EXPECT_FLOAT_EQ(res.y, 4);
         EXPECT_FLOAT_EQ(res.z, 6);
     }
-}
+} // namespace

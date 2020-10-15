@@ -4,6 +4,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+
 #include "matrix.hh"
 
 namespace libcpu
