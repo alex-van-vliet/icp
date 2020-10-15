@@ -181,7 +181,7 @@ namespace utils
     auto Matrix<DATA>::largest_eigenvector() -> Matrix<DATA>
     {
         assert(lines == columns);
-        auto b = random<DATA>(lines, 1);
+        auto b = eye<DATA>(lines, 1);
 
         // TODO: check update
         for (int i = 0; i < nb_iter; ++i)
