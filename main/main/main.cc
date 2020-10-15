@@ -18,7 +18,9 @@ int main(int argc, char* argv[])
     auto m = libcpu::read_csv(argv[1], "Points_0", "Points_1", "Points_2");
     auto p = libcpu::read_csv(argv[2], "Points_0", "Points_1", "Points_2");
 
-    auto [transform, new_p] = libcpu::icp(m, p);
+    auto transform = libcpu::find_alignment(p, m);
+
+    // auto [transform, new_p] = libcpu::icp(m, p);
 
     for (size_t i = 0; i < transform.lines; ++i)
     {
@@ -28,8 +30,10 @@ int main(int argc, char* argv[])
         }
         std::cout << std::endl;
     }
+    /*
     for (size_t i = 0; i < new_p.size() && i < 10; ++i)
     {
         std::cout << p[i] << " - " << new_p[i] << std::endl;
     }
+     */
 }

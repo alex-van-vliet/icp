@@ -1,18 +1,19 @@
 #include "icp.hh"
 
+#include <Eigen/Dense>
 #include <iostream>
 
 #include "matrix.hh"
 
 namespace libcpu
 {
-    utils::Matrix<float> to_transformation(float s, utils::Matrix<float> r,
+    utils::Matrix<float> to_transformation(const utils::Matrix<float>& r,
                                            Point3D p)
     {
         utils::Matrix<float> transformation(4, 4);
         for (size_t i = 0; i < 3; ++i)
             for (size_t j = 0; j < 3; ++j)
-                transformation.set(i, j, r.get(i, j) * s);
+                transformation.set(i, j, r.get(i, j));
 
         transformation.set(0, 3, p.x);
         transformation.set(1, 3, p.y);
@@ -34,20 +35,28 @@ namespace libcpu
         auto [sxx, sxy, sxz, syx, syy, syz, szx, szy, szz] =
             find_covariance(p_centered, y_centered);
 
-        utils::Matrix<float> matrix{
-            {sxx + syy + szz, syz - szy, -sxz + szx, sxy - syx},
-            {-szy + syz, sxx - szz - syy, sxy + syx, sxz + szx},
-            {szx - sxz, syx + sxy, syy - szz - sxx, syz + szy},
-            {-syx + sxy, szx + sxz, szy + syz, szz - syy - sxx},
+        Eigen::Matrix3f matrix;
+        matrix(0, 0) = sxx;
+        matrix(0, 1) = syx;
+        matrix(0, 2) = szx;
+        matrix(1, 0) = sxy;
+        matrix(1, 1) = syy;
+        matrix(1, 2) = szy;
+        matrix(2, 0) = sxz;
+        matrix(2, 1) = syz;
+        matrix(2, 2) = szz;
+
+        Eigen::JacobiSVD svd(matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+        Eigen::Matrix3f rotation = svd.matrixV() * svd.matrixU().transpose();
+
+        utils::Matrix<float> r{
+            {rotation(0, 0), rotation(0, 1), rotation(0, 2)},
+            {rotation(1, 0), rotation(1, 1), rotation(1, 2)},
+            {rotation(2, 0), rotation(2, 1), rotation(2, 2)},
         };
 
-        auto quaternion = matrix.largest_eigenvector<10>();
-
-        auto q0 = quaternion.get(0, 0);
-        auto q1 = quaternion.get(1, 0);
-        auto q2 = quaternion.get(2, 0);
-        auto q3 = quaternion.get(3, 0);
-
+        /*
         // TRANSPOSEE INCORPOREE
         utils::Matrix<float> qbar{
             {q0, q1, q2, q3},
@@ -64,12 +73,17 @@ namespace libcpu
         auto rotation = utils::dot(qbar, q);
         auto r = rotation.submatrix(1, 4, 1, 4);
 
-        auto s = sqrt(sum_of_squared_norms(y_centered)
-                      / sum_of_squared_norms(p_centered));
+        for (size_t i = 0; i < 3; ++i)
+        {
+            r.set(i, 0, r.get(i, 0) * s.x);
+            r.set(i, 1, r.get(i, 1) * s.y);
+            r.set(i, 2, r.get(i, 2) * s.z);
+        }
+         */
 
-        auto t = subtract(mu_y, dot(scale(s, r), mu_p));
+        auto t = subtract(mu_y, dot(r, mu_p));
 
-        return to_transformation(s, r, t);
+        return to_transformation(r, t);
     }
 
     void apply_alignment(point_list& p, utils::Matrix<float> transformation)
@@ -104,7 +118,7 @@ namespace libcpu
             std::cerr << "Starting iter " << (i + 1) << "/" << max_iters
                       << std::endl;
             auto y = closest(new_p, m);
-            auto new_transformation = find_alignment(y, new_p);
+            auto new_transformation = find_alignment(new_p, y);
 
             transformation = dot(new_transformation, transformation);
             apply_alignment(new_p, new_transformation);
