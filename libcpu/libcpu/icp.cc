@@ -37,18 +37,18 @@ namespace libcpu
 
         Eigen::Matrix3f matrix;
         matrix(0, 0) = sxx;
-        matrix(0, 1) = syx;
-        matrix(0, 2) = szx;
-        matrix(1, 0) = sxy;
+        matrix(0, 1) = sxy;
+        matrix(0, 2) = sxz;
+        matrix(1, 0) = syx;
         matrix(1, 1) = syy;
-        matrix(1, 2) = szy;
-        matrix(2, 0) = sxz;
-        matrix(2, 1) = syz;
+        matrix(1, 2) = syz;
+        matrix(2, 0) = szx;
+        matrix(2, 1) = szy;
         matrix(2, 2) = szz;
 
         Eigen::JacobiSVD svd(matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-        Eigen::Matrix3f rotation = svd.matrixV() * svd.matrixU().transpose();
+        Eigen::Matrix3f rotation = svd.matrixU() * svd.matrixV().transpose();
 
         utils::Matrix<float> r{
             {rotation(0, 0), rotation(0, 1), rotation(0, 2)},
