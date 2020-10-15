@@ -205,4 +205,15 @@ namespace utils
 
         return res;
     }
+    template <typename DATA>
+    auto scale(float a, const Matrix<DATA>& b) -> Matrix<DATA>
+    {
+        Matrix<DATA> res(b.lines, b.columns);
+
+        for (size_t i = 0; i < res.lines; ++i)
+            for (size_t j = 0; j < res.columns; ++j)
+                res.set(i, j, a * b.get(i, j));
+
+        return res;
+    }
 } // namespace utils
