@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.17)
-project(gpgpu CUDA CXX)
+project(gpgpu CXX)
+
+include(CheckLanguage)
+
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+else()
+  message(STATUS "No CUDA support")
+endif()
 
 include(FetchContent)
 
