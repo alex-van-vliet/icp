@@ -11,7 +11,7 @@ namespace libcpu
         auto mu_y = mean(y);
 
         auto p_centered = subtract(p, mu_p);
-        auto y_centered = subtract(p, mu_y);
+        auto y_centered = subtract(y, mu_y);
 
         auto [sxx, sxy, sxz, syx, syy, syz, szx, szy, szz] =
             find_covariance(p_centered, y_centered);
