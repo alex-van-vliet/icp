@@ -100,4 +100,17 @@ namespace
             for (size_t j = 0; j < res.columns; ++j)
                 EXPECT_FLOAT_EQ(matrix.get(i + 1, j + 1), res.get(i, j));
     }
+
+    TEST(MatrixTest, compare_matrix_true)
+    {
+        auto matrix = utils::random<float>(4, 4);
+        ASSERT_EQ(matrix == matrix, true);
+    }
+
+    TEST(MatrixTest, compare_matrix_false)
+    {
+        auto matrix1 = utils::random<float>(4, 4);
+        auto matrix2 = utils::eye<float>(4);
+        ASSERT_EQ(matrix1 == matrix2, false);
+    }
 } // namespace

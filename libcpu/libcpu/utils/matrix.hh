@@ -133,6 +133,22 @@ namespace utils
     }
 
     template <typename DATA>
+    bool operator==(const Matrix<DATA>& a, const Matrix<DATA>& b)
+    {
+        if (a.columns != b.columns || a.lines != b.lines)
+            return false;
+        for (size_t i = 0; i < a.lines; ++i)
+        {
+            for (size_t j = 0; j < a.columns; ++j)
+            {
+                if(a.get(i, j) != b.get(i, j))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    template <typename DATA>
     auto dot(const Matrix<DATA>& a, const Matrix<DATA>& b) -> Matrix<DATA>
     {
         assert(a.columns == b.lines);
