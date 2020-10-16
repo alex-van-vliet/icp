@@ -232,4 +232,18 @@ namespace utils
 
         return res;
     }
+    template <typename DATA>
+    void operator+=(Matrix<DATA>& a, const Matrix<DATA>& b)
+    {
+        assert(a.lines == b.lines);
+        assert(b.columns == a.columns);
+
+        for (size_t i = 0; i < a.lines; ++i)
+        {
+            for (size_t j = 0; j < a.columns; ++j)
+            {
+                a.set(i, j, a.get(i,j) + b.get(i, j));
+            }
+        }
+    }
 } // namespace utils

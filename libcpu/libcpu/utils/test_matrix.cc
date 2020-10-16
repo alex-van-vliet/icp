@@ -113,4 +113,12 @@ namespace
         auto matrix2 = utils::eye<float>(4);
         ASSERT_EQ(matrix1 == matrix2, false);
     }
+
+    TEST(MatrixTest, add_matrix)
+    {
+        auto matrix1 = utils::eye<float>(4);
+        auto matrix2 = utils::Matrix<float>(4, 4, 0);
+        matrix2 += matrix1;
+        ASSERT_EQ(matrix2 == matrix1, true);
+    }
 } // namespace
