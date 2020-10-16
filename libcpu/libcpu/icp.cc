@@ -24,16 +24,19 @@ namespace libcpu
     }
 
     utils::Matrix<float> find_alignment(const point_list& p,
-                                        const point_list& y)
+                                        const point_list& m)
     {
         auto mu_p = mean(p);
-        auto mu_y = mean(y);
+        auto mu_m = mean(m);
 
         auto p_centered = subtract(p, mu_p);
-        auto y_centered = subtract(y, mu_y);
+        auto m_centered = subtract(m, mu_m);
+
+        // auto y = closest(p_centered, m_centered);
+        auto y = m_centered;
 
         auto [sxx, sxy, sxz, syx, syy, syz, szx, szy, szz] =
-            find_covariance(p_centered, y_centered);
+            find_covariance(p_centered, y);
 
         Eigen::Matrix3f matrix;
         matrix(0, 0) = sxx;
@@ -56,32 +59,7 @@ namespace libcpu
             {rotation(2, 0), rotation(2, 1), rotation(2, 2)},
         };
 
-        /*
-        // TRANSPOSEE INCORPOREE
-        utils::Matrix<float> qbar{
-            {q0, q1, q2, q3},
-            {-q1, q0, -q3, q2},
-            {-q2, q3, q0, -q1},
-            {-q3, -q2, q1, q0},
-        };
-        utils::Matrix<float> q{
-            {q0, -q1, -q2, -q3},
-            {q1, q0, -q3, q2},
-            {q2, q3, q0, -q1},
-            {q3, -q2, q1, q0},
-        };
-        auto rotation = utils::dot(qbar, q);
-        auto r = rotation.submatrix(1, 4, 1, 4);
-
-        for (size_t i = 0; i < 3; ++i)
-        {
-            r.set(i, 0, r.get(i, 0) * s.x);
-            r.set(i, 1, r.get(i, 1) * s.y);
-            r.set(i, 2, r.get(i, 2) * s.z);
-        }
-         */
-
-        auto t = subtract(mu_y, dot(r, mu_p));
+        auto t = subtract(mu_m, dot(r, mu_p));
 
         return to_transformation(r, t);
     }
@@ -105,23 +83,38 @@ namespace libcpu
         }
     }
 
-    std::tuple<utils::Matrix<float>, point_list> icp(const point_list& m,
-                                                     const point_list& p)
+    float compute_error(const point_list& m, const point_list& p)
+    {
+        float error = 0;
+
+        for (size_t i = 0; i < m.size(); ++i)
+        {
+            float x = m[i].x - p[i].x;
+            float y = m[i].y - p[i].y;
+            float z = m[i].z - p[i].z;
+            error += x * x + y * y + z * z;
+        }
+
+        return error;
+    }
+
+    std::tuple<utils::Matrix<float>, point_list>
+    icp(const point_list& m, const point_list& p, size_t iterations)
     {
         auto transformation = utils::eye<float>(4);
 
         auto new_p = p;
 
-        size_t max_iters = 3;
-        for (size_t i = 0; i < max_iters; ++i)
+        for (size_t i = 0; i < iterations; ++i)
         {
-            std::cerr << "Starting iter " << (i + 1) << "/" << max_iters
+            std::cerr << "Starting iter " << (i + 1) << "/" << iterations
                       << std::endl;
-            auto y = closest(new_p, m);
-            auto new_transformation = find_alignment(new_p, y);
+            auto new_transformation = find_alignment(new_p, m);
 
             transformation = dot(new_transformation, transformation);
             apply_alignment(new_p, new_transformation);
+            float error = compute_error(m, new_p);
+            std::cerr << "Error: " << error << std::endl;
         }
 
         return {transformation, new_p};
