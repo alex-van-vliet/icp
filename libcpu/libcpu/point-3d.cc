@@ -98,7 +98,8 @@ namespace libcpu
     bool operator==(const Point3D& p1, const Point3D& p2)
     {
         float epsilon = 0.005f;
-        return abs(p1.x - p2.x) < epsilon && abs(p1.y - p2.y) < epsilon && abs(p1.z - p2.z) < epsilon;
+        return abs(p1.x - p2.x) < epsilon && abs(p1.y - p2.y) < epsilon
+            && abs(p1.z - p2.z) < epsilon;
     }
 
     auto read_csv(const std::string& path, const std::string& x_field,
@@ -164,38 +165,45 @@ namespace libcpu
     point_list closest(const point_list& a, const point_list& b)
     {
         point_list v;
-        v.reserve(a.size());
+        v.resize(a.size());
 
-        for (const auto& value : a)
-            v.push_back(b[closest(value, b)]);
+#pragma omp parallel for
+        for (size_t i = 0; i < a.size(); ++i)
+            v[i] = b[closest(a[i], b)];
 
         return v;
     }
 
     Point3D mean(const point_list& a)
     {
-        Point3D res = {0};
         size_t len = a.size();
+        float x = 0;
+        float y = 0;
+        float z = 0;
 
-        for (const auto& value : a)
-            res = {res.x + value.x / len, res.y + value.y / len,
-                   res.z + value.z / len};
+        for (size_t i = 0; i < len; ++i)
+        {
+            x += a[i].x / len;
+            y += a[i].y / len;
+            z += a[i].z / len;
+        }
 
-        return res;
+        return Point3D{x, y, z};
     }
 
     point_list subtract(const point_list& points, const Point3D& mean)
     {
         point_list centered;
-        centered.reserve(points.size());
+        centered.resize(points.size());
 
-        for (const auto& point : points)
+#pragma omp parallel for
+        for (size_t i = 0; i < points.size(); ++i)
         {
-            centered.push_back({
-                point.x - mean.x,
-                point.y - mean.y,
-                point.z - mean.z,
-            });
+            centered[i] = Point3D{
+                points[i].x - mean.x,
+                points[i].y - mean.y,
+                points[i].z - mean.z,
+            };
         }
 
         return centered;

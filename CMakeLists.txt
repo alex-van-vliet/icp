@@ -12,6 +12,8 @@ endif()
 
 include(FetchContent)
 
+find_package(OpenMP)
+
 FetchContent_Declare(
     GoogleTest
     URL https://github.com/google/googletest/archive/release-1.10.0.tar.gz
@@ -19,7 +21,7 @@ FetchContent_Declare(
 
 FetchContent_Declare(
     Eigen3
-    URL https://gitlab.com/libeigen/eigen/-/archive/3.3.8/eigen-3.3.8.tar.gz
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.gz
 )
 
 FetchContent_GetProperties(GoogleTest)
