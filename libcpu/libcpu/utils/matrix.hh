@@ -10,7 +10,7 @@ namespace utils
     template <typename DATA>
     class Matrix
     {
-        using mat = std::vector<std::vector<DATA>>;
+        using mat = std::vector<DATA>;
 
     public:
         /*
@@ -21,19 +21,19 @@ namespace utils
             : lines(i)
             , columns(j)
         {
-            values = std::vector<std::vector<DATA>>(
-                i, std::vector<DATA>(j, default_val));
+            values = std::vector<DATA>(j * i, default_val);
         }
 
         Matrix(std::initializer_list<std::initializer_list<DATA>> list)
             : lines(list.size())
             , columns(std::begin(list)->size())
         {
-            values.reserve(lines);
+            values.reserve(lines * columns);
             for (const auto& line : list)
             {
                 assert(line.size() == columns);
-                values.push_back(line);
+                for (const auto& elt : line)
+                    values.push_back(elt);
             }
         }
 
@@ -84,7 +84,7 @@ namespace utils
         assert(i < lines);
         assert(j < columns);
 
-        return values[i][j];
+        return values[i * lines + j];
     }
 
     template <typename DATA>
@@ -93,7 +93,7 @@ namespace utils
         assert(i < lines);
         assert(j < columns);
 
-        values[i][j] = val;
+        values[i * lines + j] = val;
     }
 
     template <typename DATA>
@@ -190,23 +190,6 @@ namespace utils
                 set(i, j, get(i, j) / norm);
             }
         }
-    }
-
-    template <typename DATA>
-    template <int nb_iter>
-    auto Matrix<DATA>::largest_eigenvector() -> Matrix<DATA>
-    {
-        assert(lines == columns);
-        auto b = eye<DATA>(lines, 1);
-
-        // TODO: check update
-        for (int i = 0; i < nb_iter; ++i)
-        {
-            b = dot(*this, b);
-            b.normalize();
-        }
-
-        return b;
     }
 
     template <typename DATA>
