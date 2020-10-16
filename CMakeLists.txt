@@ -20,6 +20,11 @@ FetchContent_Declare(
 )
 
 FetchContent_Declare(
+    GoogleBenchmark
+    URL https://github.com/google/benchmark/archive/v1.4.1.tar.gz
+)
+
+FetchContent_Declare(
     Eigen3
     URL https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.gz
 )
@@ -37,6 +42,14 @@ if (NOT Eigen3_POPULATED)
 endif ()
 
 enable_testing()
+
+FetchContent_GetProperties(GoogleBenchmark)
+if (NOT GoogleBenchmark_POPULATED)
+    FetchContent_Populate(GoogleBenchmark)
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "From Gtest")
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "From Gtest")
+    add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR})
+endif ()
 
 add_subdirectory(libcpu)
 add_subdirectory(main)
