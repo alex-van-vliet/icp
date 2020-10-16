@@ -13,4 +13,6 @@ namespace libcpu
                                                      const point_list& p,
                                                      size_t iterations,
                                                      float threshold);
+
+    void apply_alignment(point_list& p, utils::Matrix<float> transformation);
 } // namespace libcpu
