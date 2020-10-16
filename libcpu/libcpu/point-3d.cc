@@ -95,6 +95,12 @@ namespace libcpu
                   << ")";
     }
 
+    bool operator==(const Point3D& p1, const Point3D& p2)
+    {
+        float epsilon = 0.005f;
+        return abs(p1.x - p2.x) < epsilon && abs(p1.y - p2.y) < epsilon && abs(p1.z - p2.z) < epsilon;
+    }
+
     auto read_csv(const std::string& path, const std::string& x_field,
                   const std::string& y_field, const std::string& z_field)
         -> point_list

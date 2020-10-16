@@ -20,6 +20,8 @@ namespace libcpu
 
     auto operator<<(std::ostream& os, const Point3D& point) -> std::ostream&;
 
+    bool operator==(const Point3D& p1, const Point3D& p2);
+
     auto read_csv(const std::string& path, const std::string& x_field,
                   const std::string& y_field, const std::string& z_field)
         -> point_list;

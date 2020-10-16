@@ -117,4 +117,19 @@ namespace
         EXPECT_FLOAT_EQ(res.y, 4);
         EXPECT_FLOAT_EQ(res.z, 6);
     }
+
+    TEST(Points3DTest, compare_point_false)
+    {
+        Point3D a{1, 1, 1};
+        Point3D b{2, 2, 2};
+
+        ASSERT_EQ(a == b, false);
+    }
+
+    TEST(Points3DTest, compare_point_true)
+    {
+        Point3D a{1, 1, 1};
+
+        ASSERT_EQ(a == a, true);
+    }
 } // namespace
