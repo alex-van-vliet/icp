@@ -21,7 +21,7 @@ namespace utils
             : lines(i)
             , columns(j)
         {
-            values = std::vector<DATA>(j * i, default_val);
+            values = mat(j * i, default_val);
         }
 
         Matrix(std::initializer_list<std::initializer_list<DATA>> list)
