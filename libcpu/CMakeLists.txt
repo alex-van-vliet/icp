@@ -19,5 +19,7 @@ target_link_libraries(libcpu_tests PRIVATE libcpu gtest_main)
 
 add_test(libcpu_tests libcpu_tests)
 
-add_executable(libcpu_bench SOURCES)
+add_executable(libcpu_bench 
+  libcpu/benchmark.cc
+)
 target_link_libraries(libcpu_bench PRIVATE libcpu benchmark)
