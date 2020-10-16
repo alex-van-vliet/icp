@@ -11,6 +11,7 @@ target_link_libraries(libcpu eigen)
 add_executable(libcpu_tests
   libcpu/utils/test_matrix.cc
   libcpu/test_point-3d_utils.cc
+  libcpu/test_functionnal.cc
 )
 target_compile_features(libcpu_tests PUBLIC cxx_std_17)
 target_link_libraries(libcpu_tests PRIVATE libcpu gtest_main)
