@@ -31,47 +31,56 @@ int main(int argc, char* argv[])
 
     auto q = libcpu::read_csv(argv[1], "Points_0", "Points_1", "Points_2");
     auto p = libcpu::read_csv(argv[2], "Points_0", "Points_1", "Points_2");
+    /*
+        auto q_e = to_eigen(q);
+        std::cout << "Q:" << std::endl;
+        std::cout << q_e << std::endl;
+        auto p_e = to_eigen(p);
+        std::cout << "P:" << std::endl;
+        std::cout << p_e << std::endl;
 
-    auto q_e = to_eigen(q);
-    std::cout << "Q:" << std::endl;
-    std::cout << q_e << std::endl;
-    auto p_e = to_eigen(p);
-    std::cout << "P:" << std::endl;
-    std::cout << p_e << std::endl;
+        Eigen::Vector3f q_center = q_e.rowwise().mean();
+        std::cout << "Q center:" << std::endl;
+        std::cout << q_center << std::endl;
+        Eigen::Vector3f p_center = p_e.rowwise().mean();
+        std::cout << "P center:" << std::endl;
+        std::cout << p_center << std::endl;
 
-    Eigen::Vector3f q_center = q_e.rowwise().mean();
-    std::cout << "Q center:" << std::endl;
-    std::cout << q_center << std::endl;
-    Eigen::Vector3f p_center = p_e.rowwise().mean();
-    std::cout << "P center:" << std::endl;
-    std::cout << p_center << std::endl;
+        auto q_centered = q_e.colwise() - q_center;
+        std::cout << "Q centered:" << std::endl;
+        std::cout << q_centered << std::endl;
+        auto p_centered = p_e.colwise() - p_center;
+        std::cout << "P centered:" << std::endl;
+        std::cout << p_centered << std::endl;
 
-    auto q_centered = q_e.colwise() - q_center;
-    std::cout << "Q centered:" << std::endl;
-    std::cout << q_centered << std::endl;
-    auto p_centered = p_e.colwise() - p_center;
-    std::cout << "P centered:" << std::endl;
-    std::cout << p_centered << std::endl;
+        Eigen::Matrix3f covariance = p_centered * q_centered.transpose();
+        std::cout << "Covariance:" << std::endl;
+        std::cout << covariance << std::endl;
 
-    Eigen::Matrix3f covariance = p_centered * q_centered.transpose();
-    std::cout << "Covariance:" << std::endl;
-    std::cout << covariance << std::endl;
+        Eigen::JacobiSVD svd(covariance, Eigen::ComputeFullU |
+       Eigen::ComputeFullV);
 
-    Eigen::JacobiSVD svd(covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        auto rotation = (svd.matrixU() * svd.matrixV().transpose()).transpose();
+        std::cout << "Rotation:" << std::endl;
+        std::cout << rotation << std::endl;
 
-    auto rotation = svd.matrixU() * svd.matrixV().transpose();
-    std::cout << "Rotation:" << std::endl;
-    std::cout << rotation << std::endl;
+        auto new_p_e = rotation * p_e;
+        std::cout << "New P (without translation):" << std::endl;
+        std::cout << new_p_e << std::endl;
 
-    auto translation = q_center - rotation * p_center;
-    std::cout << "Translation:" << std::endl;
-    std::cout << translation << std::endl;
+        auto diff = new_p_e - q_e;
+        std::cout << "Difference:" << std::endl;
+        std::cout << diff << std::endl;
 
-    auto new_p_e = (rotation * p_e).colwise() + translation;
-    std::cout << "New P:" << std::endl;
-    std::cout << new_p_e << std::endl;
+        auto translation = q_center - rotation * p_center;
+        std::cout << "Translation:" << std::endl;
+        std::cout << translation << std::endl;
 
-    auto [transform, new_p] = libcpu::icp(q, p, 1);
+        auto res_p_e = new_p_e.colwise() + translation;
+        std::cout << "Result:" << std::endl;
+        std::cout << res_p_e << std::endl;
+    */
+    auto [transform, new_p] = libcpu::icp(q, p, 200, 1e-5);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.lines; ++i)

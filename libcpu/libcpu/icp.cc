@@ -32,8 +32,7 @@ namespace libcpu
         auto p_centered = subtract(p, mu_p);
         auto m_centered = subtract(m, mu_m);
 
-        // auto y = closest(p_centered, m_centered);
-        auto y = m_centered;
+        auto y = closest(p_centered, m_centered);
 
         auto [sxx, sxy, sxz, syx, syy, syz, szx, szy, szz] =
             find_covariance(p_centered, y);
@@ -53,10 +52,11 @@ namespace libcpu
 
         Eigen::Matrix3f rotation = svd.matrixU() * svd.matrixV().transpose();
 
+        // Transpose incorporated
         utils::Matrix<float> r{
-            {rotation(0, 0), rotation(0, 1), rotation(0, 2)},
-            {rotation(1, 0), rotation(1, 1), rotation(1, 2)},
-            {rotation(2, 0), rotation(2, 1), rotation(2, 2)},
+            {rotation(0, 0), rotation(1, 0), rotation(2, 0)},
+            {rotation(0, 1), rotation(1, 1), rotation(2, 1)},
+            {rotation(0, 2), rotation(1, 2), rotation(2, 2)},
         };
 
         auto t = subtract(mu_m, dot(r, mu_p));
@@ -98,14 +98,17 @@ namespace libcpu
         return error;
     }
 
-    std::tuple<utils::Matrix<float>, point_list>
-    icp(const point_list& m, const point_list& p, size_t iterations)
+    std::tuple<utils::Matrix<float>, point_list> icp(const point_list& m,
+                                                     const point_list& p,
+                                                     size_t iterations,
+                                                     float threshold)
     {
         auto transformation = utils::eye<float>(4);
 
         auto new_p = p;
+        float error = std::numeric_limits<float>::infinity();
 
-        for (size_t i = 0; i < iterations; ++i)
+        for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
             std::cerr << "Starting iter " << (i + 1) << "/" << iterations
                       << std::endl;
@@ -113,7 +116,7 @@ namespace libcpu
 
             transformation = dot(new_transformation, transformation);
             apply_alignment(new_p, new_transformation);
-            float error = compute_error(m, new_p);
+            error = compute_error(m, new_p);
             std::cerr << "Error: " << error << std::endl;
         }
 
