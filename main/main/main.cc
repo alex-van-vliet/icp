@@ -2,9 +2,9 @@
 #include <iostream>
 #include <unistd.h>
 
-#include "libcpu/icp.hh"
-#include "libcpu/point-3d.hh"
+#include "libgpu/icp.hh"
 
+/*
 Eigen::Matrix3Xf to_eigen(const libcpu::point_list& point_list)
 {
     Eigen::Matrix3Xf result(3, point_list.size());
@@ -17,6 +17,7 @@ Eigen::Matrix3Xf to_eigen(const libcpu::point_list& point_list)
 
     return result;
 }
+ */
 
 int main(int argc, char* argv[])
 {
@@ -80,7 +81,7 @@ int main(int argc, char* argv[])
         std::cout << "Result:" << std::endl;
         std::cout << res_p_e << std::endl;
     */
-    auto [transform, new_p] = libcpu::icp(q, p, 200, 1e-5);
+    auto [transform, new_p] = libgpu::icp(q, p, 200, 1e-5);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.lines; ++i)

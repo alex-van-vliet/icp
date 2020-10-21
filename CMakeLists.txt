@@ -52,4 +52,5 @@ if (NOT GoogleBenchmark_POPULATED)
 endif ()
 
 add_subdirectory(libcpu)
+add_subdirectory(libgpu)
 add_subdirectory(main)
