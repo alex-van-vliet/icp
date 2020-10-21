@@ -83,10 +83,10 @@ static void BM_CPU_line_translated(benchmark::State& state)
 }
 
 // Register the function as a benchmark
-BENCHMARK(BM_CPU_cow2)->Unit(benchmark::kMillisecond)->UseRealTime();
-BENCHMARK(BM_CPU_cow1)->Unit(benchmark::kMillisecond)->UseRealTime();
-BENCHMARK(BM_CPU_horse2)->Unit(benchmark::kMillisecond)->UseRealTime();
-BENCHMARK(BM_CPU_horse1)->Unit(benchmark::kMillisecond)->UseRealTime();
 BENCHMARK(BM_CPU_line_translated)->Unit(benchmark::kMillisecond)->UseRealTime();
+BENCHMARK(BM_CPU_cow1)->Unit(benchmark::kMillisecond)->UseRealTime();
+BENCHMARK(BM_CPU_cow2)->Unit(benchmark::kMillisecond)->UseRealTime();
+BENCHMARK(BM_CPU_horse1)->Unit(benchmark::kMillisecond)->UseRealTime();
+BENCHMARK(BM_CPU_horse2)->Unit(benchmark::kMillisecond)->UseRealTime();
 // Run the benchmark
 BENCHMARK_MAIN();
