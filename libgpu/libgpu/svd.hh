@@ -1,8 +1,8 @@
 #pragma once
 
-#include "matrix.hh"
+#include "libcpu/utils/matrix.hh"
 
 namespace libgpu
 {
-    GPUMatrix find_rotation(const GPUMatrix& covariance);
+    utils::Matrix<float> find_rotation(const utils::Matrix<float>& covariance);
 }

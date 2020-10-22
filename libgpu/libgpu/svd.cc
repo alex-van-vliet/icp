@@ -4,7 +4,7 @@
 
 namespace libgpu
 {
-    GPUMatrix find_rotation(const GPUMatrix& covariance)
+    utils::Matrix<float> find_rotation(const utils::Matrix<float>& covariance)
     {
         assert(covariance.rows == 3);
         assert(covariance.cols == 3);
@@ -19,7 +19,7 @@ namespace libgpu
         Eigen::Matrix3f rotation = svd.matrixU() * svd.matrixV().transpose();
 
         // Transpose incorporated
-        GPUMatrix res(3, 3);
+        utils::Matrix<float> res(3, 3);
         for (size_t i = 0; i < res.rows; ++i)
             for (size_t j = 0; j < res.cols; ++j)
                 res(i, j) = rotation(j, i);

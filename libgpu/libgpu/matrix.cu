@@ -4,20 +4,30 @@
 namespace libgpu
 {
     GPUMatrix::GPUMatrix(size_t rows, size_t cols)
-        : ptr{cuda::mallocManagedRaw<float>(rows * cols)}
+        : ptr{cuda::mallocRaw<float>(rows * cols)}
         , rows{rows}
         , cols{cols}
+        , should_delete{true}
     {}
 
     GPUMatrix::~GPUMatrix()
     {
-        cuda::free(ptr);
+        if (should_delete)
+            cuda::free(ptr);
     }
+
+    GPUMatrix::GPUMatrix(const GPUMatrix& other)
+        : ptr{other.ptr}
+        , rows{other.rows}
+        , cols{other.cols}
+        , should_delete{false}
+    {}
 
     GPUMatrix::GPUMatrix(GPUMatrix&& other) noexcept
         : ptr{std::exchange(other.ptr, nullptr)}
         , rows{other.rows}
         , cols{other.cols}
+        , should_delete{other.should_delete}
     {}
 
     GPUMatrix& GPUMatrix::operator=(GPUMatrix&& other) noexcept
@@ -26,36 +36,67 @@ namespace libgpu
         assert(rows == other.rows);
 
         ptr = std::exchange(other.ptr, nullptr);
+        should_delete = other.should_delete;
         return *this;
+    }
+
+    __global__ void zero_kernel(GPUMatrix matrix)
+    {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= matrix.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= matrix.cols)
+            return;
+
+        matrix(i, j) = 0;
     }
 
     GPUMatrix GPUMatrix::zero(size_t rows, size_t cols)
     {
         GPUMatrix res(rows, cols);
-        for (size_t i = 0; i < rows; ++i)
-            for (size_t j = 0; j < cols; ++j)
-                res(i, j) = 0;
+
+        dim3 blockdim(32, 32);
+        dim3 griddim((rows + blockdim.x - 1) / blockdim.x,
+                     (cols + blockdim.y - 1) / blockdim.y);
+        zero_kernel<<<griddim, blockdim>>>(res);
+
         return res;
+    }
+
+    __global__ void eye_kernel(GPUMatrix matrix)
+    {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= matrix.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= matrix.cols)
+            return;
+
+        matrix(i, j) = i == j ? 1 : 0;
     }
 
     GPUMatrix GPUMatrix::eye(size_t n)
     {
         GPUMatrix res(n, n);
-        for (size_t i = 0; i < n; ++i)
-            for (size_t j = 0; j < n; ++j)
-                res(i, j) = i == j ? 1 : 0;
+
+        dim3 blockdim(32, 32);
+        dim3 griddim((n + blockdim.x - 1) / blockdim.x,
+                     (n + blockdim.y - 1) / blockdim.y);
+        eye_kernel<<<griddim, blockdim>>>(res);
+
         return res;
     }
 
     GPUMatrix GPUMatrix::from_point_list(const libcpu::point_list& p)
     {
         auto matrix = GPUMatrix(p.size(), 3);
-        for (size_t i = 0; i < p.size(); ++i)
-        {
-            matrix(i, 0) = p[i].x;
-            matrix(i, 1) = p[i].y;
-            matrix(i, 2) = p[i].z;
-        }
+
+        cudaMemcpy(matrix.ptr, p.data(), p.size() * sizeof(libcpu::Point3D),
+                   cudaMemcpyHostToDevice);
+
         return matrix;
     }
 
@@ -63,28 +104,64 @@ namespace libgpu
     {
         assert(cols == 3);
         libcpu::point_list list;
-        list.reserve(rows);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            list.push_back(libcpu::Point3D{
-                (*this)(i, 0),
-                (*this)(i, 1),
-                (*this)(i, 2),
-            });
-        }
+        list.resize(rows);
+
+        cudaMemcpy(list.data(), ptr, rows * sizeof(libcpu::Point3D),
+                   cudaMemcpyDeviceToHost);
+
         return list;
+    }
+
+    GPUMatrix GPUMatrix::from_cpu(const utils::Matrix<float>& cpu)
+    {
+        GPUMatrix res(cpu.rows, cpu.cols);
+
+        cudaMemcpy(res.ptr, cpu.values.data(),
+                   cpu.cols * cpu.rows * sizeof(float), cudaMemcpyHostToDevice);
+
+        return res;
+    }
+
+    utils::Matrix<float> GPUMatrix::to_cpu() const
+    {
+        utils::Matrix<float> res(rows, cols);
+
+        cudaMemcpy(res.values.data(), ptr, cols * rows * sizeof(float),
+                   cudaMemcpyDeviceToHost);
+
+        return res;
+    }
+
+    __global__ void mean_kernel(GPUMatrix matrix, GPUMatrix mean)
+    {
+        for (size_t i = 0; i < matrix.rows; ++i)
+            for (size_t j = 0; j < matrix.cols; ++j)
+                mean(0, j) += matrix(i, j) / matrix.rows;
     }
 
     GPUMatrix GPUMatrix::mean() const
     {
-        auto mean = GPUMatrix::zero(1, 3);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            mean(0, 0) += (*this)(i, 0) / rows;
-            mean(0, 1) += (*this)(i, 1) / rows;
-            mean(0, 2) += (*this)(i, 2) / rows;
-        }
+        auto mean = GPUMatrix::zero(1, cols);
+
+        mean_kernel<<<1, 1>>>(*this, mean);
+
+        cudaDeviceSynchronize();
+
         return mean;
+    }
+
+    __global__ void subtract_rowwise_kernel(GPUMatrix a, GPUMatrix b,
+                                            GPUMatrix res)
+    {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= a.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= a.cols)
+            return;
+
+        res(i, j) = a(i, j) - b(0, j);
     }
 
     GPUMatrix GPUMatrix::subtract_rowwise(const GPUMatrix& matrix) const
@@ -92,13 +169,27 @@ namespace libgpu
         assert(matrix.rows == 1);
         assert(matrix.cols == cols);
 
-        auto res = GPUMatrix(rows, cols);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            for (size_t j = 0; j < cols; ++j)
-                res(i, j) = (*this)(i, j) - matrix(0, j);
-        }
+        GPUMatrix res(rows, cols);
+
+        dim3 blockdim(32, 32);
+        dim3 griddim((rows + blockdim.x - 1) / blockdim.x,
+                     (cols + blockdim.y - 1) / blockdim.y);
+        subtract_rowwise_kernel<<<griddim, blockdim>>>(*this, matrix, res);
+
         return res;
+    }
+
+    __global__ void subtract_kernel(GPUMatrix a, GPUMatrix b, GPUMatrix res)
+    {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= a.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= a.cols)
+            return;
+
+        res(i, j) = a(i, j) - b(i, j);
     }
 
     GPUMatrix GPUMatrix::subtract(const GPUMatrix& matrix) const
@@ -106,13 +197,31 @@ namespace libgpu
         assert(matrix.rows == rows);
         assert(matrix.cols == cols);
 
-        auto res = GPUMatrix(rows, cols);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            for (size_t j = 0; j < cols; ++j)
-                res(i, j) = (*this)(i, j) - matrix(i, j);
-        }
+        GPUMatrix res(rows, cols);
+
+        dim3 blockdim(32, 32);
+        dim3 griddim((rows + blockdim.x - 1) / blockdim.x,
+                     (cols + blockdim.y - 1) / blockdim.y);
+        subtract_kernel<<<griddim, blockdim>>>(*this, matrix, res);
+
         return res;
+    }
+
+    __global__ void dot_kernel(GPUMatrix a, GPUMatrix b, GPUMatrix res)
+    {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= a.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= a.cols)
+            return;
+
+        float total = 0;
+        for (size_t k = 0; k < a.cols; ++k)
+            total += a(i, k) * b(k, j);
+
+        res(i, j) = total;
     }
 
     GPUMatrix GPUMatrix::dot(const GPUMatrix& matrix) const
@@ -121,35 +230,33 @@ namespace libgpu
 
         GPUMatrix res(rows, matrix.cols);
 
-        for (size_t i = 0; i < res.rows; ++i)
-        {
-            for (size_t j = 0; j < res.cols; ++j)
-            {
-                res(i, j) = 0;
-                for (size_t k = 0; k < cols; ++k)
-                    res(i, j) += (*this)(i, k) * matrix(k, j);
-            }
-        }
+        dim3 blockdim(32, 32);
+        dim3 griddim((res.rows + blockdim.x - 1) / blockdim.x,
+                     (res.cols + blockdim.y - 1) / blockdim.y);
+        dot_kernel<<<griddim, blockdim>>>(*this, matrix, res);
+
         return res;
     }
 
-    __global__ void compute_distances(float x, float y, float z, float* matrix,
-                                      size_t nb_points, float* distances)
+    __global__ void closest_kernel(GPUMatrix from, GPUMatrix to, GPUMatrix res)
     {
-        auto point = blockIdx.x * blockDim.x + threadIdx.x;
+        for (size_t i = 0; i < from.rows; ++i)
+        {
+            size_t closest_i = 0;
+            float closest_dist = GPUMatrix::distance(from, i, to, closest_i);
+            for (size_t j = 1; j < to.rows; ++j)
+            {
+                float dist = GPUMatrix::distance(from, i, to, j);
+                if (dist < closest_dist)
+                {
+                    closest_i = j;
+                    closest_dist = dist;
+                }
+            }
 
-        if (point >= nb_points)
-            return;
-
-        float dx = matrix[point * 3 + 0] - x;
-        dx *= dx;
-        float dy = matrix[point * 3 + 1] - y;
-        dy *= dy;
-        float dz = matrix[point * 3 + 2] - z;
-        dz *= dz;
-
-        float dist = dx + dy + dz;
-        distances[point] = dist;
+            for (size_t j = 0; j < from.cols; ++j)
+                res(i, j) = to(closest_i, j);
+        }
     }
 
     GPUMatrix GPUMatrix::closest(const GPUMatrix& matrix) const
@@ -158,40 +265,20 @@ namespace libgpu
         assert(matrix.cols == 3);
         assert(matrix.rows > 0);
 
-        auto res = GPUMatrix(rows, cols);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            dim3 blockdim(512);
-            dim3 griddim((matrix.rows + blockdim.x - 1) / 512);
-            auto distances = cuda::mallocManaged<float>(matrix.rows);
-            cudaDeviceSynchronize();
-            compute_distances<<<griddim, blockdim>>>(
-                (*this)(i, 0), (*this)(i, 1), (*this)(i, 2), matrix.ptr,
-                matrix.rows, distances.get());
-            auto error = cudaGetLastError();
-            if (error != cudaSuccess)
-                printf("%s\n", cudaGetErrorString(error));
-            cudaDeviceSynchronize();
+        GPUMatrix res(rows, cols);
 
-            size_t closest_i = 0;
-            float closest_dist = distances.get()[0];
-            for (size_t j = 0; j < matrix.rows; ++j)
-            {
-                float dist = distances.get()[j];
-                if (dist < closest_dist)
-                {
-                    closest_i = j;
-                    closest_dist = dist;
-                }
-            }
-
-            for (size_t j = 0; j < cols; ++j)
-            {
-                res(i, j) = matrix(closest_i, j);
-            }
-        }
+        closest_kernel<<<1, 1>>>(*this, matrix, res);
 
         return res;
+    }
+
+    __global__ void find_covariance_kernel(GPUMatrix a, GPUMatrix b,
+                                           GPUMatrix res)
+    {
+        for (size_t i = 0; i < a.rows; ++i)
+            for (size_t j = 0; j < a.cols; ++j)
+                for (size_t k = 0; k < b.cols; ++k)
+                    res(j, k) += a(i, j) * b(i, k);
     }
 
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
@@ -201,35 +288,23 @@ namespace libgpu
 
         auto res = GPUMatrix::zero(a.cols, b.cols);
 
-        for (size_t i = 0; i < a.rows; ++i)
-            for (size_t j = 0; j < a.cols; ++j)
-                for (size_t k = 0; k < b.cols; ++k)
-                    res(j, k) += a(i, j) * b(i, k);
+        find_covariance_kernel<<<1, 1>>>(a, b, res);
 
         return res;
     }
 
-    float GPUMatrix::distance(const GPUMatrix& a, size_t a_i,
-                              const GPUMatrix& b, size_t b_i)
+    __global__ void transpose_kernel(GPUMatrix a, GPUMatrix res)
     {
-        assert(a.cols == b.cols);
-
-        float dist = 0;
-        for (size_t j = 0; j < a.cols; ++j)
-        {
-            float diff = a(a_i, j) - b(b_i, j);
-            dist += diff * diff;
-        }
-        return dist;
+        for (size_t i = 0; i < a.rows; ++i)
+            for (size_t j = 0; j < a.cols; ++j)
+                res(j, i) = a(i, j);
     }
 
     GPUMatrix GPUMatrix::transpose() const
     {
         GPUMatrix res(cols, rows);
 
-        for (size_t i = 0; i < rows; ++i)
-            for (size_t j = 0; j < cols; ++j)
-                res(j, i) = (*this)(i, j);
+        transpose_kernel<<<1, 1>>>(*this, res);
 
         return res;
     }

@@ -3,52 +3,33 @@
 
 #include "cuda/memory.hh"
 #include "icp.hh"
+#include "matrix.hh"
 #include "svd.hh"
 
 namespace libgpu
 {
-    /*
-    GPUMatrix find_rotation(const GPUMatrix& covariance)
+    __global__ void to_transformation_kernel(GPUMatrix rotation,
+                                             GPUMatrix translation,
+                                             GPUMatrix res)
     {
-        assert(covariance.rows == 3);
-        assert(covariance.cols == 3);
+        uint i = threadIdx.x;
+        uint j = threadIdx.y;
 
-        cusolverDnHandle_t cusolverH;
-        cublasHandle_t cublasH;
-        const int lda = covariance.rows;
-
-        auto matrix = cuda::mallocManaged<float>(lda * covariance.cols);
-        for (size_t i = 0; i < covariance.rows; ++i)
-            for (size_t j = 0; j < covariance.cols; ++j)
-                matrix.get()[j * covariance.rows + i] = covariance(i, j);
-
-        cudaDeviceSynchronize();
-
-        auto U = cuda::mallocManaged<float>(lda * covariance.rows);
-        auto VT = cuda::mallocManaged<float>(lda * covariance.cols);
-        auto S = cuda::mallocManaged<float>(covariance.cols);
-        auto Info = cuda::mallocManaged<int>(1);
-
-        int lwork = 0;
-        float *rwork;
-
-        cusolverDnCreate(&cusolverH);
-        cublasCreate(&cublasH);
-
-        cusolverDnSgesvd_bufferSize(cusolverH, covariance.rows, covariance.cols,
-    &lwork); auto work = cuda::mallocManaged<float>(lwork);
-
-        cusolverDnSgesvd(cusolverH, 'A', 'A',
-            covariance.rows, covariance.cols, matrix.get(), lda, S.get(),
-    U.get(), lda, VT.get(), lda, work.get(), lwork, rwork, Info.get());
-        cudaDeviceSynchronize();
-
-        // free memory
-        cudaFree(rwork);
-        cublasDestroy(cublasH);
-        cusolverDnDestroy(cusolverH);
+        if (i < 3)
+        {
+            if (j < 3)
+                res(i, j) = rotation(i, j);
+            else // i < 3 && j == 3
+                res(i, 3) = translation(0, i);
+        }
+        else // i == 3
+        {
+            if (j < 3)
+                res(3, j) = 0;
+            else // i == 3 && j == 3
+                res(3, 3) = 1;
+        }
     }
-     */
 
     GPUMatrix to_transformation(const GPUMatrix& rotation,
                                 const GPUMatrix& translation)
@@ -59,16 +40,11 @@ namespace libgpu
         assert(translation.cols == 3);
 
         GPUMatrix transformation(4, 4);
-        for (size_t i = 0; i < 3; ++i)
-        {
-            for (size_t j = 0; j < 3; ++j)
-                transformation(i, j) = rotation(i, j);
 
-            transformation(i, 3) = translation(0, i);
-            transformation(3, i) = 0;
-        }
+        dim3 blockdim(4, 4);
+        to_transformation_kernel<<<1, blockdim>>>(rotation, translation,
+                                                  transformation);
 
-        transformation(3, 3) = 1;
         return transformation;
     }
 
@@ -84,28 +60,40 @@ namespace libgpu
 
         auto covariance = GPUMatrix::find_covariance(p_centered, y);
 
-        auto rotation = find_rotation(covariance);
+        auto rotation = GPUMatrix::from_cpu(find_rotation(covariance.to_cpu()));
 
         auto translation = mu_m.subtract(mu_p.dot(rotation.transpose()));
 
         return to_transformation(rotation, translation);
     }
 
-    float compute_error(const GPUMatrix& m, const GPUMatrix& p)
+    __global__ void compute_error_kernel(GPUMatrix m, GPUMatrix p,
+                                         float* error_d)
     {
         float error = 0;
 
         for (size_t i = 0; i < m.rows; ++i)
             error += GPUMatrix::distance(m, i, p, i);
 
+        *error_d = error;
+    }
+
+    float compute_error(const GPUMatrix& m, const GPUMatrix& p)
+    {
+        auto error_d = cuda::malloc<float>(1);
+
+        compute_error_kernel<<<1, 1>>>(m, p, error_d.get());
+
+        float error = 0;
+        cudaMemcpy(&error, error_d.get(), sizeof(float),
+                   cudaMemcpyDeviceToHost);
+
         return error;
     }
 
-    void apply_alignment(GPUMatrix& p, const GPUMatrix& transformation)
+    __global__ void apply_alignment_kernel(GPUMatrix p,
+                                           GPUMatrix transformation)
     {
-        assert(p.cols == 3);
-        assert(transformation.rows == 4);
-        assert(transformation.cols == 4);
         for (size_t i = 0; i < p.rows; ++i)
         {
             float values[3] = {0};
@@ -121,7 +109,16 @@ namespace libgpu
         }
     }
 
-    std::tuple<GPUMatrix, libcpu::point_list>
+    void apply_alignment(GPUMatrix& p, const GPUMatrix& transformation)
+    {
+        assert(p.cols == 3);
+        assert(transformation.rows == 4);
+        assert(transformation.cols == 4);
+
+        apply_alignment_kernel<<<1, 1>>>(p, transformation);
+    }
+
+    std::tuple<utils::Matrix<float>, libcpu::point_list>
     icp(const libcpu::point_list& m_cpu, const libcpu::point_list& p,
         size_t iterations, float threshold)
     {
@@ -144,6 +141,6 @@ namespace libgpu
             std::cerr << "Error: " << error << std::endl;
         }
 
-        return {std::move(transformation), new_p.to_point_list()};
+        return {transformation.to_cpu(), new_p.to_point_list()};
     }
 } // namespace libgpu
