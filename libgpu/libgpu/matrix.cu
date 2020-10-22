@@ -240,23 +240,24 @@ namespace libgpu
 
     __global__ void closest_kernel(GPUMatrix from, GPUMatrix to, GPUMatrix res)
     {
-        for (size_t i = 0; i < from.rows; ++i)
-        {
-            size_t closest_i = 0;
-            float closest_dist = GPUMatrix::distance(from, i, to, closest_i);
-            for (size_t j = 1; j < to.rows; ++j)
-            {
-                float dist = GPUMatrix::distance(from, i, to, j);
-                if (dist < closest_dist)
-                {
-                    closest_i = j;
-                    closest_dist = dist;
-                }
-            }
+        uint row = blockIdx.x * blockDim.x + threadIdx.x;
+        if (row >= from.rows)
+            return;
 
-            for (size_t j = 0; j < from.cols; ++j)
-                res(i, j) = to(closest_i, j);
+        size_t closest_i = 0;
+        float closest_dist = GPUMatrix::distance(from, row, to, closest_i);
+        for (size_t j = 1; j < to.rows; ++j)
+        {
+            float dist = GPUMatrix::distance(from, row, to, j);
+            if (dist < closest_dist)
+            {
+                closest_i = j;
+                closest_dist = dist;
+            }
         }
+
+        for (size_t j = 0; j < from.cols; ++j)
+            res(row, j) = to(closest_i, j);
     }
 
     GPUMatrix GPUMatrix::closest(const GPUMatrix& matrix) const
@@ -267,7 +268,9 @@ namespace libgpu
 
         GPUMatrix res(rows, cols);
 
-        closest_kernel<<<1, 1>>>(*this, matrix, res);
+        dim3 blockdim(1024);
+        dim3 griddim((rows + blockdim.x - 1) / blockdim.x);
+        closest_kernel<<<griddim, blockdim>>>(*this, matrix, res);
 
         return res;
     }
