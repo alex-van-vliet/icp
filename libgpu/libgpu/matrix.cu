@@ -133,19 +133,51 @@ namespace libgpu
         return res;
     }
 
+    __global__ void compute_distances(float x, float y, float z, float* matrix,
+                                      size_t nb_points, float* distances)
+    {
+        auto point = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (point >= nb_points)
+            return;
+
+        float dx = matrix[point * 3 + 0] - x;
+        dx *= dx;
+        float dy = matrix[point * 3 + 1] - y;
+        dy *= dy;
+        float dz = matrix[point * 3 + 2] - z;
+        dz *= dz;
+
+        float dist = dx + dy + dz;
+        distances[point] = dist;
+    }
+
     GPUMatrix GPUMatrix::closest(const GPUMatrix& matrix) const
     {
-        assert(matrix.cols == cols);
+        assert(cols == 3);
+        assert(matrix.cols == 3);
         assert(matrix.rows > 0);
 
         auto res = GPUMatrix(rows, cols);
         for (size_t i = 0; i < rows; ++i)
         {
+            dim3 blockdim(512);
+            dim3 griddim((matrix.rows + blockdim.x - 1) / 512);
+            auto distances = cuda::mallocManaged<float>(matrix.rows);
+            cudaDeviceSynchronize();
+            compute_distances<<<griddim, blockdim>>>(
+                (*this)(i, 0), (*this)(i, 1), (*this)(i, 2), matrix.ptr,
+                matrix.rows, distances.get());
+            auto error = cudaGetLastError();
+            if (error != cudaSuccess)
+                printf("%s\n", cudaGetErrorString(error));
+            cudaDeviceSynchronize();
+
             size_t closest_i = 0;
-            float closest_dist = distance(*this, i, matrix, closest_i);
+            float closest_dist = distances.get()[0];
             for (size_t j = 0; j < matrix.rows; ++j)
             {
-                float dist = distance(*this, i, matrix, j);
+                float dist = distances.get()[j];
                 if (dist < closest_dist)
                 {
                     closest_i = j;
