@@ -77,7 +77,7 @@ namespace libgpu
 
     GPUMatrix GPUMatrix::mean() const
     {
-        auto mean = GPUMatrix(1, 3);
+        auto mean = GPUMatrix::zero(1, 3);
         for (size_t i = 0; i < rows; ++i)
         {
             mean(0, 0) += (*this)(i, 0) / rows;
@@ -189,5 +189,16 @@ namespace libgpu
             dist += diff * diff;
         }
         return dist;
+    }
+
+    GPUMatrix GPUMatrix::transpose() const
+    {
+        GPUMatrix res(cols, rows);
+
+        for (size_t i = 0; i < rows; ++i)
+            for (size_t j = 0; j < cols; ++j)
+                res(j, i) = (*this)(i, j);
+
+        return res;
     }
 } // namespace libgpu

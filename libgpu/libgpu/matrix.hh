@@ -54,6 +54,8 @@ namespace libgpu
 
         GPUMatrix closest(const GPUMatrix& matrix) const;
 
+        GPUMatrix transpose() const;
+
         static GPUMatrix find_covariance(const GPUMatrix& a,
                                          const GPUMatrix& b);
 

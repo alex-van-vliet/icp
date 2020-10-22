@@ -86,7 +86,7 @@ namespace libgpu
 
         auto rotation = find_rotation(covariance);
 
-        auto translation = mu_m.subtract(mu_p.dot(rotation));
+        auto translation = mu_m.subtract(mu_p.dot(rotation.transpose()));
 
         return to_transformation(rotation, translation);
     }
