@@ -14,8 +14,8 @@ namespace
     {
         auto matrix = utils::Matrix<int>(2, 3);
 
-        EXPECT_EQ(2, matrix.lines);
-        EXPECT_EQ(3, matrix.columns);
+        EXPECT_EQ(2, matrix.rows);
+        EXPECT_EQ(3, matrix.cols);
     }
 
     TEST(MatrixTest, set_small)
@@ -39,8 +39,8 @@ namespace
     {
         auto matrix = utils::random<float>(1, 2);
 
-        EXPECT_EQ(1, matrix.lines);
-        EXPECT_EQ(2, matrix.columns);
+        EXPECT_EQ(1, matrix.rows);
+        EXPECT_EQ(2, matrix.cols);
     }
 
     TEST(MatrixTest, dot_right)
@@ -48,10 +48,10 @@ namespace
         auto matrix = utils::random<float>(3, 4);
 
         auto res = utils::dot(matrix, utils::eye<float>(4));
-        ASSERT_EQ(matrix.lines, res.lines);
-        ASSERT_EQ(matrix.columns, res.columns);
-        for (size_t i = 0; i < matrix.lines; ++i)
-            for (size_t j = 0; j < matrix.columns; ++j)
+        ASSERT_EQ(matrix.rows, res.rows);
+        ASSERT_EQ(matrix.cols, res.cols);
+        for (size_t i = 0; i < matrix.rows; ++i)
+            for (size_t j = 0; j < matrix.cols; ++j)
                 EXPECT_FLOAT_EQ(matrix.get(i, j), res.get(i, j));
     }
 
@@ -60,10 +60,10 @@ namespace
         auto matrix = utils::random<float>(3, 4);
 
         auto res = utils::dot(utils::eye<float>(3), matrix);
-        ASSERT_EQ(matrix.lines, res.lines);
-        ASSERT_EQ(matrix.columns, res.columns);
-        for (size_t i = 0; i < matrix.lines; ++i)
-            for (size_t j = 0; j < matrix.columns; ++j)
+        ASSERT_EQ(matrix.rows, res.rows);
+        ASSERT_EQ(matrix.cols, res.cols);
+        for (size_t i = 0; i < matrix.rows; ++i)
+            for (size_t j = 0; j < matrix.cols; ++j)
                 EXPECT_FLOAT_EQ(matrix.get(i, j), res.get(i, j));
     }
 
@@ -81,10 +81,10 @@ namespace
         auto matrix = utils::random<float>(4, 4);
         auto res = matrix.submatrix(1, 4, 1, 4);
 
-        ASSERT_EQ(3, res.lines);
-        ASSERT_EQ(3, res.columns);
-        for (size_t i = 0; i < res.lines; ++i)
-            for (size_t j = 0; j < res.columns; ++j)
+        ASSERT_EQ(3, res.rows);
+        ASSERT_EQ(3, res.cols);
+        for (size_t i = 0; i < res.rows; ++i)
+            for (size_t j = 0; j < res.cols; ++j)
                 EXPECT_FLOAT_EQ(matrix.get(i + 1, j + 1), res.get(i, j));
     }
 

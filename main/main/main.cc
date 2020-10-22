@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "libcpu/icp.hh"
 #include "libgpu/icp.hh"
 
 /*
@@ -84,11 +85,11 @@ int main(int argc, char* argv[])
     auto [transform, new_p] = libgpu::icp(q, p, 200, 1e-5);
 
     std::cout << "Transformation: " << std::endl;
-    for (size_t i = 0; i < transform.lines; ++i)
+    for (size_t i = 0; i < transform.rows; ++i)
     {
-        for (size_t j = 0; j < transform.columns; ++j)
+        for (size_t j = 0; j < transform.cols; ++j)
         {
-            std::cout << transform.get(i, j) << ' ';
+            std::cout << transform(i, j) << ' ';
         }
         std::cout << std::endl;
     }

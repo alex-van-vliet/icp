@@ -1,10 +1,13 @@
 if(CMAKE_CUDA_COMPILER)
     add_library(libgpu
         libgpu/icp.cu libgpu/icp.hh
+        libgpu/cuda/memory.cu libgpu/cuda/memory.hh
+        libgpu/matrix.cu libgpu/matrix.hh
+        libgpu/svd.cc libgpu/svd.hh
         )
     target_compile_features(libgpu PUBLIC cxx_std_17)
     target_include_directories(libgpu PUBLIC .)
-    target_link_libraries(libgpu PRIVATE libcpu -lcublas)
+    target_link_libraries(libgpu PRIVATE libcpu eigen)
 #    add_library(libgpu
 #        libcpu/point-3d.cc libcpu/point-3d.hh
 #        libcpu/icp.cc libcpu/icp.hh

@@ -14,24 +14,24 @@ namespace utils
 
     public:
         /*
-        ** i: lines
-        ** j: columns
+        ** i: rows
+        ** j: cols
         */
         Matrix(size_t i, size_t j, DATA default_val = 0)
-            : lines(i)
-            , columns(j)
+            : rows(i)
+            , cols(j)
         {
             values = mat(j * i, default_val);
         }
 
         Matrix(std::initializer_list<std::initializer_list<DATA>> list)
-            : lines(list.size())
-            , columns(std::begin(list)->size())
+            : rows(list.size())
+            , cols(std::begin(list)->size())
         {
-            values.reserve(lines * columns);
+            values.reserve(rows * cols);
             for (const auto& line : list)
             {
-                assert(line.size() == columns);
+                assert(line.size() == cols);
                 for (const auto& elt : line)
                     values.push_back(elt);
             }
@@ -41,8 +41,8 @@ namespace utils
 
         Matrix& operator=(const Matrix<DATA>& other)
         {
-            assert(other.columns == columns);
-            assert(other.lines == lines);
+            assert(other.cols == cols);
+            assert(other.rows == rows);
             values = other.values;
             return *this;
         }
@@ -51,8 +51,8 @@ namespace utils
 
         Matrix& operator=(Matrix<DATA>&& other)
         {
-            assert(other.columns == columns);
-            assert(other.lines == lines);
+            assert(other.cols == cols);
+            assert(other.rows == rows);
             values = std::move(other.values);
             return *this;
         }
@@ -63,6 +63,9 @@ namespace utils
 
         void set(size_t i, size_t j, DATA val);
 
+        DATA& operator()(size_t i, size_t j);
+        DATA operator()(size_t i, size_t j) const;
+
         template <int nb_iter>
         Matrix<DATA> largest_eigenvector();
 
@@ -71,8 +74,8 @@ namespace utils
         Matrix<DATA> submatrix(size_t i_start, size_t i_end, size_t j_start,
                                size_t j_end);
 
-        const size_t lines;
-        const size_t columns;
+        const size_t rows;
+        const size_t cols;
 
     private:
         mat values;
@@ -81,19 +84,31 @@ namespace utils
     template <typename DATA>
     auto Matrix<DATA>::get(size_t i, size_t j) const -> DATA
     {
-        assert(i < lines);
-        assert(j < columns);
-
-        return values[i * lines + j];
+        return (*this)(i, j);
     }
 
     template <typename DATA>
     void Matrix<DATA>::set(size_t i, size_t j, DATA val)
     {
-        assert(i < lines);
-        assert(j < columns);
+        (*this)(i, j) = val;
+    }
 
-        values[i * lines + j] = val;
+    template <typename DATA>
+    DATA& Matrix<DATA>::operator()(size_t i, size_t j)
+    {
+        assert(i < rows);
+        assert(j < cols);
+
+        return values[i * cols + j];
+    }
+
+    template <typename DATA>
+    DATA Matrix<DATA>::operator()(size_t i, size_t j) const
+    {
+        assert(i < rows);
+        assert(j < cols);
+
+        return values[i * cols + j];
     }
 
     template <typename DATA>
@@ -121,9 +136,9 @@ namespace utils
     {
         auto matrix = Matrix<DATA>(n, m);
 
-        for (size_t i = 0; i < matrix.lines; ++i)
+        for (size_t i = 0; i < matrix.rows; ++i)
         {
-            for (size_t j = 0; j < matrix.columns; ++j)
+            for (size_t j = 0; j < matrix.cols; ++j)
             {
                 matrix.set(i, j, DATA(rand()) / RAND_MAX);
             }
@@ -135,13 +150,13 @@ namespace utils
     template <typename DATA>
     bool operator==(const Matrix<DATA>& a, const Matrix<DATA>& b)
     {
-        if (a.columns != b.columns || a.lines != b.lines)
+        if (a.cols != b.cols || a.rows != b.rows)
             return false;
-        for (size_t i = 0; i < a.lines; ++i)
+        for (size_t i = 0; i < a.rows; ++i)
         {
-            for (size_t j = 0; j < a.columns; ++j)
+            for (size_t j = 0; j < a.cols; ++j)
             {
-                if(a.get(i, j) != b.get(i, j))
+                if (a.get(i, j) != b.get(i, j))
                     return false;
             }
         }
@@ -151,16 +166,16 @@ namespace utils
     template <typename DATA>
     auto dot(const Matrix<DATA>& a, const Matrix<DATA>& b) -> Matrix<DATA>
     {
-        assert(a.columns == b.lines);
+        assert(a.cols == b.rows);
 
-        Matrix<DATA> result(a.lines, b.columns);
+        Matrix<DATA> result(a.rows, b.cols);
 
-        for (size_t i = 0; i < result.lines; ++i)
+        for (size_t i = 0; i < result.rows; ++i)
         {
-            for (size_t j = 0; j < result.columns; ++j)
+            for (size_t j = 0; j < result.cols; ++j)
             {
                 DATA val = 0;
-                for (size_t k = 0; k < a.columns; ++k)
+                for (size_t k = 0; k < a.cols; ++k)
                     val += a.get(i, k) * b.get(k, j);
                 result.set(i, j, val);
             }
@@ -173,9 +188,9 @@ namespace utils
     void Matrix<DATA>::normalize()
     {
         DATA norm = 0;
-        for (size_t i = 0; i < lines; ++i)
+        for (size_t i = 0; i < rows; ++i)
         {
-            for (size_t j = 0; j < columns; ++j)
+            for (size_t j = 0; j < cols; ++j)
             {
                 float val = get(i, j);
                 norm += val * val;
@@ -183,9 +198,9 @@ namespace utils
         }
         norm = sqrt(norm);
 
-        for (size_t i = 0; i < lines; ++i)
+        for (size_t i = 0; i < rows; ++i)
         {
-            for (size_t j = 0; j < columns; ++j)
+            for (size_t j = 0; j < cols; ++j)
             {
                 set(i, j, get(i, j) / norm);
             }
@@ -198,8 +213,8 @@ namespace utils
     {
         Matrix<DATA> res(i_end - i_start, j_end - j_start);
 
-        for (size_t i = 0; i < res.lines; ++i)
-            for (size_t j = 0; j < res.columns; ++j)
+        for (size_t i = 0; i < res.rows; ++i)
+            for (size_t j = 0; j < res.cols; ++j)
                 res.set(i, j, get(i_start + i, j_start + j));
 
         return res;
@@ -207,10 +222,10 @@ namespace utils
     template <typename DATA>
     auto scale(float a, const Matrix<DATA>& b) -> Matrix<DATA>
     {
-        Matrix<DATA> res(b.lines, b.columns);
+        Matrix<DATA> res(b.rows, b.cols);
 
-        for (size_t i = 0; i < res.lines; ++i)
-            for (size_t j = 0; j < res.columns; ++j)
+        for (size_t i = 0; i < res.rows; ++i)
+            for (size_t j = 0; j < res.cols; ++j)
                 res.set(i, j, a * b.get(i, j));
 
         return res;
@@ -218,14 +233,14 @@ namespace utils
     template <typename DATA>
     void operator+=(Matrix<DATA>& a, const Matrix<DATA>& b)
     {
-        assert(a.lines == b.lines);
-        assert(b.columns == a.columns);
+        assert(a.rows == b.rows);
+        assert(b.cols == a.cols);
 
-        for (size_t i = 0; i < a.lines; ++i)
+        for (size_t i = 0; i < a.rows; ++i)
         {
-            for (size_t j = 0; j < a.columns; ++j)
+            for (size_t j = 0; j < a.cols; ++j)
             {
-                a.set(i, j, a.get(i,j) + b.get(i, j));
+                a.set(i, j, a.get(i, j) + b.get(i, j));
             }
         }
     }

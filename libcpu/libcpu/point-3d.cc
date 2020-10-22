@@ -247,8 +247,8 @@ namespace libcpu
 
     Point3D dot(const utils::Matrix<float>& a, const Point3D& b)
     {
-        assert(a.lines == 3);
-        assert(a.columns == 3);
+        assert(a.rows == 3);
+        assert(a.cols == 3);
         return {
             a.get(0, 0) * b.x + a.get(0, 1) * b.y + a.get(0, 2) * b.z,
             a.get(1, 0) * b.x + a.get(1, 1) * b.y + a.get(1, 2) * b.z,
