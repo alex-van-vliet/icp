@@ -23,17 +23,11 @@ namespace libcpu
         return transformation;
     }
 
-    utils::Matrix<float> find_alignment(const point_list& p,
-                                        const point_list& m)
+    utils::Matrix<float> find_alignment(const point_list& p_centered,
+                                        const Point3D& mu_p,
+                                        const point_list& y,
+                                        const Point3D& mu_m)
     {
-        auto mu_p = mean(p);
-        auto mu_m = mean(m);
-
-        auto p_centered = subtract(p, mu_p);
-        auto m_centered = subtract(m, mu_m);
-
-        auto y = closest(p_centered, m_centered);
-
         auto [sxx, sxy, sxz, syx, syy, syz, szx, szy, szz] =
             find_covariance(p_centered, y);
 
@@ -83,15 +77,16 @@ namespace libcpu
         }
     }
 
-    float compute_error(const point_list& m, const point_list& p)
+    float compute_error(const point_list& m, const point_list& p,
+                        const Point3D& mu_m)
     {
         float error = 0;
 
         for (size_t i = 0; i < m.size(); ++i)
         {
-            float x = m[i].x - p[i].x;
-            float y = m[i].y - p[i].y;
-            float z = m[i].z - p[i].z;
+            float x = m[i].x + mu_m.x - p[i].x;
+            float y = m[i].y + mu_m.y - p[i].y;
+            float z = m[i].z + mu_m.z - p[i].z;
             error += x * x + y * y + z * z;
         }
 
@@ -108,15 +103,23 @@ namespace libcpu
         auto new_p = p;
         float error = std::numeric_limits<float>::infinity();
 
+        auto mu_m = mean(m);
+        auto m_centered = subtract(m, mu_m);
+
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
             std::cerr << "Starting iter " << (i + 1) << "/" << iterations
                       << std::endl;
-            auto new_transformation = find_alignment(new_p, m);
+            auto mu_p = mean(new_p);
+            auto p_centered = subtract(new_p, mu_p);
+
+            auto y = closest(p_centered, m_centered);
+
+            auto new_transformation = find_alignment(p_centered, mu_p, y, mu_m);
 
             transformation = dot(new_transformation, transformation);
             apply_alignment(new_p, new_transformation);
-            error = compute_error(m, new_p);
+            error = compute_error(y, new_p, mu_m);
             std::cerr << "Error: " << error << std::endl;
         }
 

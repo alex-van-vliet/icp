@@ -48,16 +48,9 @@ namespace libgpu
         return transformation;
     }
 
-    GPUMatrix find_alignment(const GPUMatrix& p, const GPUMatrix& m)
+    GPUMatrix find_alignment(const GPUMatrix& p_centered, const GPUMatrix& mu_p,
+                             const GPUMatrix& y, const GPUMatrix& mu_m)
     {
-        auto mu_p = p.mean();
-        auto mu_m = m.mean();
-
-        auto p_centered = p.subtract_rowwise(mu_p);
-        auto m_centered = m.subtract_rowwise(mu_m);
-
-        auto y = p_centered.closest(m_centered);
-
         auto covariance = GPUMatrix::find_covariance(p_centered, y);
 
         auto rotation = GPUMatrix::from_cpu(find_rotation(covariance.to_cpu()));
@@ -68,21 +61,34 @@ namespace libgpu
     }
 
     __global__ void compute_error_kernel(GPUMatrix m, GPUMatrix p,
-                                         float* error_d)
+                                         GPUMatrix mu_m, float* error_d)
     {
         float error = 0;
 
+        assert(m.cols == p.cols);
+        assert(m.cols == mu_m.cols);
+        assert(mu_m.rows == 1);
+
         for (size_t i = 0; i < m.rows; ++i)
-            error += GPUMatrix::distance(m, i, p, i);
+        {
+            float dist = 0;
+            for (size_t j = 0; j < m.cols; ++j)
+            {
+                float diff = m(i, j) + mu_m(0, j) - p(i, j);
+                dist += diff * diff;
+            }
+            error += dist;
+        }
 
         *error_d = error;
     }
 
-    float compute_error(const GPUMatrix& m, const GPUMatrix& p)
+    float compute_error(const GPUMatrix& m, const GPUMatrix& p,
+                        const GPUMatrix& mu_m)
     {
         auto error_d = cuda::malloc<float>(1);
 
-        compute_error_kernel<<<1, 1>>>(m, p, error_d.get());
+        compute_error_kernel<<<1, 1>>>(m, p, mu_m, error_d.get());
 
         float error = 0;
         cudaMemcpy(&error, error_d.get(), sizeof(float),
@@ -129,15 +135,22 @@ namespace libgpu
 
         float error = std::numeric_limits<float>::infinity();
 
+        auto mu_m = m.mean();
+        auto m_centered = m.subtract_rowwise(mu_m);
+
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
             std::cerr << "Starting iter " << (i + 1) << "/" << iterations
                       << std::endl;
-            auto new_transformation = find_alignment(new_p, m);
+            auto mu_p = new_p.mean();
+            auto p_centered = new_p.subtract_rowwise(mu_p);
+            auto y = p_centered.closest(m_centered);
+
+            auto new_transformation = find_alignment(p_centered, mu_p, y, mu_m);
 
             transformation = new_transformation.dot(transformation);
             apply_alignment(new_p, new_transformation);
-            error = compute_error(m, new_p);
+            error = compute_error(y, new_p, mu_m);
             std::cerr << "Error: " << error << std::endl;
         }
 
