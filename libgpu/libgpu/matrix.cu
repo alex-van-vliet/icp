@@ -132,20 +132,43 @@ namespace libgpu
         return res;
     }
 
-    __global__ void mean_kernel(GPUMatrix matrix, GPUMatrix mean)
+    __global__ void divide_kernel(GPUMatrix matrix, GPUMatrix divided)
     {
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= matrix.rows)
+            return;
+
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= matrix.cols)
+            return;
+
+        divided(i, j) = matrix(i, j) / matrix.rows;
+    }
+
+    __global__ void sum_kernel(GPUMatrix matrix, GPUMatrix mean)
+    {
+        uint j = blockIdx.y * blockDim.y + threadIdx.y;
+        if (j >= matrix.cols)
+            return;
+
         for (size_t i = 0; i < matrix.rows; ++i)
-            for (size_t j = 0; j < matrix.cols; ++j)
-                mean(0, j) += matrix(i, j) / matrix.rows;
+            mean(0, j) += matrix(i, j);
     }
 
     GPUMatrix GPUMatrix::mean() const
     {
+        auto divided = GPUMatrix(rows, cols);
+
+        dim3 blockdim_divide(32, 32);
+        dim3 griddim_divide((rows + blockdim_divide.x - 1) / blockdim_divide.x,
+                            (cols + blockdim_divide.y - 1) / blockdim_divide.y);
+        divide_kernel<<<griddim_divide, blockdim_divide>>>(*this, divided);
+
         auto mean = GPUMatrix::zero(1, cols);
 
-        mean_kernel<<<1, 1>>>(*this, mean);
-
-        cudaDeviceSynchronize();
+        dim3 blockdim_sum(1, 32);
+        dim3 griddim_sum(1, (cols + blockdim_sum.y - 1) / blockdim_sum.y);
+        sum_kernel<<<griddim_sum, blockdim_sum>>>(divided, mean);
 
         return mean;
     }
