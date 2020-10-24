@@ -298,21 +298,6 @@ namespace libgpu
         return res;
     }
 
-    __global__ void find_covariance_kernel(GPUMatrix products, GPUMatrix res)
-    {
-        uint j = blockIdx.x * blockDim.x + threadIdx.x;
-        if (j >= res.rows)
-            return;
-
-        uint k = blockIdx.y * blockDim.y + threadIdx.y;
-        if (k >= res.cols)
-            return;
-
-        uint pos = j * res.cols + k;
-        for (size_t i = 0; i < products.rows; ++i)
-            res(j, k) += products(i, pos);
-    }
-
     __global__ void product_kernel(GPUMatrix a, GPUMatrix b, GPUMatrix res)
     {
         uint line = blockIdx.x * blockDim.x + threadIdx.x;
@@ -331,6 +316,46 @@ namespace libgpu
         res(line, i) = a(line, i_a) * b(line, i_b);
     }
 
+    __global__ void find_covariance_kernel(GPUMatrix products, GPUMatrix res)
+    {
+        uint j = blockIdx.x * blockDim.x + threadIdx.x;
+        if (j >= res.rows)
+            return;
+
+        uint k = blockIdx.y * blockDim.y + threadIdx.y;
+        if (k >= res.cols)
+            return;
+
+        uint pos = j * res.cols + k;
+        for (size_t i = 0; i < products.rows; ++i)
+            res(j, k) += products(i, pos);
+    }
+
+    __global__ void find_covariance_sum_kernel(GPUMatrix inputs, GPUMatrix res)
+    {
+        extern __shared__ float memory[];
+
+        uint line = blockIdx.x * blockDim.x + threadIdx.x;
+        if (line >= inputs.rows)
+            return;
+
+        uint i = blockIdx.y * blockDim.y + threadIdx.y;
+        if (i >= inputs.cols)
+            return;
+
+        uint shared_line = threadIdx.x * inputs.cols;
+        memory[shared_line + i] = inputs(line, i);
+
+        __syncthreads();
+        if (threadIdx.x != 0)
+            return;
+
+        uint end = umin(line + blockDim.x, inputs.rows) - line;
+
+        for (uint j = 0; j < end; ++j)
+            res(blockIdx.x, i) += memory[j * inputs.cols + i];
+    }
+
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
     {
         assert(a.cols == 3);
@@ -345,11 +370,19 @@ namespace libgpu
             (b.cols + blockdim_product.z - 1) / blockdim_product.z);
         product_kernel<<<griddim_product, blockdim_product>>>(a, b, products);
 
+        dim3 blockdim_sum(64, 16);
+        dim3 griddim_sum((products.rows + blockdim_sum.x - 1) / blockdim_sum.x,
+                         (products.cols + blockdim_sum.y - 1) / blockdim_sum.y);
+        auto sums = GPUMatrix::zero(griddim_sum.x, products.cols);
+        find_covariance_sum_kernel<<<griddim_sum, blockdim_sum,
+                                     blockdim_sum.x * products.cols
+                                         * sizeof(float)>>>(products, sums);
+
         auto res = GPUMatrix::zero(a.cols, b.cols);
         dim3 blockdim(32, 32);
         dim3 griddim((res.rows + blockdim.x - 1) / blockdim.x,
                      (res.cols + blockdim.y - 1) / blockdim.y);
-        find_covariance_kernel<<<griddim, blockdim>>>(products, res);
+        find_covariance_kernel<<<griddim, blockdim>>>(sums, res);
 
         return res;
     }
