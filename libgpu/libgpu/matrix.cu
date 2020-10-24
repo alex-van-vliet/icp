@@ -298,8 +298,7 @@ namespace libgpu
         return res;
     }
 
-    __global__ void find_covariance_kernel(GPUMatrix a, GPUMatrix b,
-                                           GPUMatrix res)
+    __global__ void find_covariance_kernel(GPUMatrix products, GPUMatrix res)
     {
         uint j = blockIdx.x * blockDim.x + threadIdx.x;
         if (j >= res.rows)
@@ -309,21 +308,48 @@ namespace libgpu
         if (k >= res.cols)
             return;
 
-        for (size_t i = 0; i < a.rows; ++i)
-            res(j, k) += a(i, j) * b(i, k);
+        uint pos = j * res.cols + k;
+        for (size_t i = 0; i < products.rows; ++i)
+            res(j, k) += products(i, pos);
+    }
+
+    __global__ void product_kernel(GPUMatrix a, GPUMatrix b, GPUMatrix res)
+    {
+        uint line = blockIdx.x * blockDim.x + threadIdx.x;
+        if (line >= res.rows)
+            return;
+
+        uint i_a = blockIdx.y * blockDim.y + threadIdx.y;
+        if (i_a >= a.cols)
+            return;
+
+        uint i_b = blockIdx.z * blockDim.z + threadIdx.z;
+        if (i_b >= b.cols)
+            return;
+
+        uint i = i_a * a.cols + i_b;
+        res(line, i) = a(line, i_a) * b(line, i_b);
     }
 
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
     {
-        assert(a.cols == b.cols);
+        assert(a.cols == 3);
+        assert(b.cols == 3);
         assert(a.rows == b.rows);
 
-        auto res = GPUMatrix::zero(a.cols, b.cols);
+        auto products = GPUMatrix(a.rows, a.cols * b.cols);
+        dim3 blockdim_product(64, 4, 4);
+        dim3 griddim_product(
+            (products.rows + blockdim_product.x - 1) / blockdim_product.x,
+            (a.cols + blockdim_product.y - 1) / blockdim_product.y,
+            (b.cols + blockdim_product.z - 1) / blockdim_product.z);
+        product_kernel<<<griddim_product, blockdim_product>>>(a, b, products);
 
+        auto res = GPUMatrix::zero(a.cols, b.cols);
         dim3 blockdim(32, 32);
         dim3 griddim((res.rows + blockdim.x - 1) / blockdim.x,
                      (res.cols + blockdim.y - 1) / blockdim.y);
-        find_covariance_kernel<<<griddim, blockdim>>>(a, b, res);
+        find_covariance_kernel<<<griddim, blockdim>>>(products, res);
 
         return res;
     }
