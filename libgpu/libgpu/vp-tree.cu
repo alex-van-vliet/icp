@@ -111,58 +111,103 @@ namespace libgpu
         return sqrt(dx * dx + dy * dy + dz * dz);
     }
 
-    __device__ GPUVPTree::GPUVPTreeSearchResult
-    search(const float query[3], const GPUVPTree::GPUVPTreeNode* node)
+    enum State
     {
-        if (node->points)
+        PREFIX,
+        INFIX,
+        SUFFIX,
+    };
+
+    struct StackFrame
+    {
+        State state;
+        GPUVPTree::GPUVPTreeNode* node;
+        float d;
+        GPUVPTree::GPUVPTreeSearchResult result;
+    };
+
+    __device__ GPUVPTree::GPUVPTreeSearchResult
+    search_points(GPUVPTree::GPUVPTreeNode* node, const float* query)
+    {
+        uint nb_points = node->nb_points;
+        float* points = node->points;
+
+        uint closest_i = 0;
+        float closest_dist = distance(query, points);
+        for (size_t i = 1; i < nb_points; ++i)
         {
-            uint nb_points = node->nb_points;
-            float* points = node->points;
-
-            uint closest_i = 0;
-            float closest_dist = distance(query, points);
-            for (size_t i = 1; i < nb_points; ++i)
+            points += 3;
+            float dist = distance(query, points);
+            if (dist < closest_dist)
             {
-                points += 3;
-                float dist = distance(query, points);
-                if (dist < closest_dist)
-                {
-                    closest_i = i;
-                    closest_dist = dist;
-                }
+                closest_i = i;
+                closest_dist = dist;
             }
-
-            float* point = node->points + 3 * closest_i;
-            return {
-                point[0],
-                point[1],
-                point[2],
-                closest_dist,
-            };
         }
 
-        float d = distance(query, &node->center_x);
-        auto n = d < node->radius ? search(query, node->inside)
-                                  : search(query, node->outside);
+        float* point = node->points + 3 * closest_i;
+        return {
+            point[0],
+            point[1],
+            point[2],
+            closest_dist,
+        };
+    }
 
-        float threshold = fabsf(node->radius - d);
-        if (n.distance < threshold)
-            return n;
+    __device__ void prefix(const float* query, StackFrame stack[16],
+                           uint& stack_size, GPUVPTree::GPUVPTreeNode* node)
+    {
+        while (!node->points)
+        {
+            float d = distance(query, &node->center_x);
 
-        auto o = d < node->radius ? search(query, node->outside)
-                                  : search(query, node->inside);
+            stack[stack_size++] = {State::INFIX, node, d};
 
-        if (o.distance < n.distance)
-            return o;
-        else
-            return n;
+            node = d < node->radius ? node->inside : node->outside;
+        }
+        stack[stack_size].result = search_points(node, query);
     }
 
     __device__ auto GPUVPTree::search(const float* query)
         -> GPUVPTreeSearchResult
     {
-        return ::libgpu::search(query,
-                                reinterpret_cast<GPUVPTreeNode*>(pointer));
+        StackFrame stack[16];
+        uint stack_size = 0;
+
+        prefix(query, stack, stack_size,
+               reinterpret_cast<GPUVPTreeNode*>(pointer));
+
+        while (stack_size > 0)
+        {
+            StackFrame* next_frame = stack + stack_size;
+            StackFrame* frame = next_frame - 1;
+            GPUVPTreeNode* node = frame->node;
+
+            if (frame->state == State::INFIX)
+            {
+                float d = frame->d;
+                float threshold = fabsf(node->radius - d);
+
+                frame->result = next_frame->result;
+                if (frame->result.distance < threshold)
+                    stack_size -= 1;
+                else
+                {
+                    prefix(query, stack, stack_size,
+                           d < node->radius ? node->outside : node->inside);
+
+                    frame->state = State::SUFFIX;
+                }
+            }
+            else if (frame->state == State::SUFFIX)
+            {
+                if (next_frame->result.distance < frame->result.distance)
+                    frame->result = next_frame->result;
+                stack_size -= 1;
+            }
+        }
+
+        return stack[0].result;
     }
 
     __global__ void closest_kernel(GPUMatrix from, GPUVPTree tree,
