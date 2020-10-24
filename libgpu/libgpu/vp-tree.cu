@@ -195,12 +195,6 @@ namespace libgpu
         dim3 griddim((queries.rows + blockdim.x - 1) / blockdim.x);
         closest_kernel<<<griddim, blockdim>>>(queries, *this, res);
 
-        auto error = cudaGetLastError();
-        if (error != cudaSuccess)
-            printf("%s\n", cudaGetErrorString(error));
-
-        cudaDeviceSynchronize();
-
         return res;
     }
 } // namespace libgpu
