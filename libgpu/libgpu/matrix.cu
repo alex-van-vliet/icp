@@ -155,8 +155,35 @@ namespace libgpu
             mean(0, j) += matrix(i, j);
     }
 
+    __global__ void block_sum_kernel(GPUMatrix inputs, GPUMatrix res)
+    {
+        extern __shared__ float memory[];
+
+        uint line = blockIdx.x * blockDim.x + threadIdx.x;
+        if (line >= inputs.rows)
+            return;
+
+        uint i = blockIdx.y * blockDim.y + threadIdx.y;
+        if (i >= inputs.cols)
+            return;
+
+        uint shared_line = threadIdx.x * inputs.cols;
+        memory[shared_line + i] = inputs(line, i);
+
+        __syncthreads();
+        if (threadIdx.x != 0)
+            return;
+
+        uint end = umin(line + blockDim.x, inputs.rows) - line;
+
+        for (uint j = 0; j < end; ++j)
+            res(blockIdx.x, i) += memory[j * inputs.cols + i];
+    }
+
     GPUMatrix GPUMatrix::mean() const
     {
+        assert(cols == 3);
+
         auto divided = GPUMatrix(rows, cols);
 
         dim3 blockdim_divide(32, 32);
@@ -164,11 +191,20 @@ namespace libgpu
                             (cols + blockdim_divide.y - 1) / blockdim_divide.y);
         divide_kernel<<<griddim_divide, blockdim_divide>>>(*this, divided);
 
+        dim3 blockdim_block_sum(256, 4);
+        dim3 griddim_block_sum(
+            (divided.rows + blockdim_block_sum.x - 1) / blockdim_block_sum.x,
+            (divided.cols + blockdim_block_sum.y - 1) / blockdim_block_sum.y);
+        auto sums = GPUMatrix::zero(griddim_block_sum.x, divided.cols);
+        block_sum_kernel<<<griddim_block_sum, blockdim_block_sum,
+                           blockdim_block_sum.x * divided.cols
+                               * sizeof(float)>>>(divided, sums);
+
         auto mean = GPUMatrix::zero(1, cols);
 
         dim3 blockdim_sum(1, 32);
         dim3 griddim_sum(1, (cols + blockdim_sum.y - 1) / blockdim_sum.y);
-        sum_kernel<<<griddim_sum, blockdim_sum>>>(divided, mean);
+        sum_kernel<<<griddim_sum, blockdim_sum>>>(sums, mean);
 
         return mean;
     }
@@ -331,31 +367,6 @@ namespace libgpu
             res(j, k) += products(i, pos);
     }
 
-    __global__ void find_covariance_sum_kernel(GPUMatrix inputs, GPUMatrix res)
-    {
-        extern __shared__ float memory[];
-
-        uint line = blockIdx.x * blockDim.x + threadIdx.x;
-        if (line >= inputs.rows)
-            return;
-
-        uint i = blockIdx.y * blockDim.y + threadIdx.y;
-        if (i >= inputs.cols)
-            return;
-
-        uint shared_line = threadIdx.x * inputs.cols;
-        memory[shared_line + i] = inputs(line, i);
-
-        __syncthreads();
-        if (threadIdx.x != 0)
-            return;
-
-        uint end = umin(line + blockDim.x, inputs.rows) - line;
-
-        for (uint j = 0; j < end; ++j)
-            res(blockIdx.x, i) += memory[j * inputs.cols + i];
-    }
-
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
     {
         assert(a.cols == 3);
@@ -374,9 +385,9 @@ namespace libgpu
         dim3 griddim_sum((products.rows + blockdim_sum.x - 1) / blockdim_sum.x,
                          (products.cols + blockdim_sum.y - 1) / blockdim_sum.y);
         auto sums = GPUMatrix::zero(griddim_sum.x, products.cols);
-        find_covariance_sum_kernel<<<griddim_sum, blockdim_sum,
-                                     blockdim_sum.x * products.cols
-                                         * sizeof(float)>>>(products, sums);
+        block_sum_kernel<<<griddim_sum, blockdim_sum,
+                           blockdim_sum.x * products.cols * sizeof(float)>>>(
+            products, sums);
 
         auto res = GPUMatrix::zero(a.cols, b.cols);
         dim3 blockdim(32, 32);
