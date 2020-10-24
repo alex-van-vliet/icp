@@ -157,27 +157,32 @@ namespace libgpu
 
     __global__ void block_sum_kernel(GPUMatrix inputs, GPUMatrix res)
     {
-        extern __shared__ float memory[];
+        extern __shared__ float all_memory[];
 
         uint line = blockIdx.x * blockDim.x + threadIdx.x;
-        if (line >= inputs.rows)
-            return;
 
         uint i = blockIdx.y * blockDim.y + threadIdx.y;
         if (i >= inputs.cols)
             return;
 
-        uint shared_line = threadIdx.x * inputs.cols;
-        memory[shared_line + i] = inputs(line, i);
+        float* memory = all_memory + i * blockDim.x;
+        if (line >= inputs.rows)
+            memory[threadIdx.x] = 0;
+        else
+            memory[threadIdx.x] = inputs(line, i);
 
         __syncthreads();
+
+        for (uint s = blockDim.x / 2; s > 0; s >>= 1u)
+        {
+            if (threadIdx.x < s)
+                memory[threadIdx.x] += memory[threadIdx.x + s];
+            __syncthreads();
+        }
+
         if (threadIdx.x != 0)
             return;
-
-        uint end = umin(line + blockDim.x, inputs.rows) - line;
-
-        for (uint j = 0; j < end; ++j)
-            res(blockIdx.x, i) += memory[j * inputs.cols + i];
+        res(blockIdx.x, i) = memory[0];
     }
 
     GPUMatrix GPUMatrix::mean() const
