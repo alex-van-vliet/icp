@@ -44,7 +44,7 @@ namespace libcpu
         return select(array.data(), array.size(), array.size() / 2);
     }
 
-    VPTree::VPTree(uint threshold, point_list points)
+    VPTree::VPTree(uint threshold, const point_list& points)
     {
         if (points.size() < threshold)
         {
@@ -55,7 +55,6 @@ namespace libcpu
         else
         {
             this->center = points.back();
-            points.pop_back();
 
             std::vector<float> distances;
             distances.resize(points.size());
@@ -102,8 +101,8 @@ namespace libcpu
             std::swap(inside_points.back(), inside_points[inside_keep]);
             std::swap(outside_points.back(), outside_points[outside_keep]);
 
-            this->inside = std::make_unique<VPTree>(threshold, std::move(inside_points));
-            this->outside = std::make_unique<VPTree>(threshold, std::move(outside_points));
+            this->inside = std::make_unique<VPTree>(threshold, inside_points);
+            this->outside = std::make_unique<VPTree>(threshold, outside_points);
         }
     }
 
@@ -130,26 +129,14 @@ namespace libcpu
         auto n = d < radius ? inside->search(query) : outside->search(query);
 
         if (std::get<1>(n) < abs(radius - d))
-        {
-            if (d < std::get<1>(n))
-                return {this->center, d};
             return n;
-        }
 
         auto o = d < radius ? outside->search(query) : inside->search(query);
 
         if (std::get<1>(o) < std::get<1>(n))
-        {
-            if (d < std::get<1>(o))
-                return {this->center, d};
             return o;
-        }
         else
-        {
-            if (d < std::get<1>(n))
-                return {this->center, d};
             return n;
-        }
     }
 
     point_list VPTree::closest(const point_list& queries)
