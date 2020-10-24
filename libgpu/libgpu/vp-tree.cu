@@ -147,15 +147,48 @@ namespace libgpu
 
         float threshold = fabsf(node->radius - d);
         if (n.distance < threshold)
+        {
+            if (d < n.distance)
+            {
+                return {
+                    node->center_x,
+                    node->center_y,
+                    node->center_z,
+                    d,
+                };
+            }
             return n;
+        }
 
         auto o = d < node->radius ? search(query, node->outside)
                                   : search(query, node->inside);
 
         if (o.distance < n.distance)
+        {
+            if (d < o.distance)
+            {
+                return {
+                    node->center_x,
+                    node->center_y,
+                    node->center_z,
+                    d,
+                };
+            }
             return o;
+        }
         else
+        {
+            if (d < n.distance)
+            {
+                return {
+                    node->center_x,
+                    node->center_y,
+                    node->center_z,
+                    d,
+                };
+            }
             return n;
+        }
     }
 
     __device__ auto GPUVPTree::search(const float* query)
