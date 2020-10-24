@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "matrix.hh"
+#include "vp-tree.hh"
 
 namespace libcpu
 {
@@ -104,7 +105,8 @@ namespace libcpu
         float error = std::numeric_limits<float>::infinity();
 
         auto mu_m = mean(m);
-        auto m_centered = subtract(m, mu_m);
+
+        VPTree tree(subtract(m, mu_m));
 
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
@@ -113,7 +115,7 @@ namespace libcpu
             auto mu_p = mean(new_p);
             auto p_centered = subtract(new_p, mu_p);
 
-            auto y = closest(p_centered, m_centered);
+            auto y = tree.closest(p_centered);
 
             auto new_transformation = find_alignment(p_centered, mu_p, y, mu_m);
 
