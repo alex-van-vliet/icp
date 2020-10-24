@@ -301,10 +301,16 @@ namespace libgpu
     __global__ void find_covariance_kernel(GPUMatrix a, GPUMatrix b,
                                            GPUMatrix res)
     {
+        uint j = blockIdx.x * blockDim.x + threadIdx.x;
+        if (j >= res.rows)
+            return;
+
+        uint k = blockIdx.y * blockDim.y + threadIdx.y;
+        if (k >= res.cols)
+            return;
+
         for (size_t i = 0; i < a.rows; ++i)
-            for (size_t j = 0; j < a.cols; ++j)
-                for (size_t k = 0; k < b.cols; ++k)
-                    res(j, k) += a(i, j) * b(i, k);
+            res(j, k) += a(i, j) * b(i, k);
     }
 
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
@@ -314,7 +320,10 @@ namespace libgpu
 
         auto res = GPUMatrix::zero(a.cols, b.cols);
 
-        find_covariance_kernel<<<1, 1>>>(a, b, res);
+        dim3 blockdim(32, 32);
+        dim3 griddim((res.rows + blockdim.x - 1) / blockdim.x,
+                     (res.cols + blockdim.y - 1) / blockdim.y);
+        find_covariance_kernel<<<griddim, blockdim>>>(a, b, res);
 
         return res;
     }
