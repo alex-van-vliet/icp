@@ -32,14 +32,14 @@ namespace libgpu
         {
             assert(i < rows);
             assert(j < cols);
-            return this->ptr[i * cols + j];
+            return this->ptr[j * rows + i];
         }
 
         inline __device__ float operator()(size_t i, size_t j) const
         {
             assert(i < rows);
             assert(j < cols);
-            return this->ptr[i * cols + j];
+            return this->ptr[j * rows + i];
         }
 
         static GPUMatrix from_point_list(const libcpu::point_list& p);

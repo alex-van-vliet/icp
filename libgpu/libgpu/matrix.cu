@@ -92,9 +92,18 @@ namespace libgpu
 
     GPUMatrix GPUMatrix::from_point_list(const libcpu::point_list& p)
     {
+        std::unique_ptr<float[]> array(new float[p.size() * 3]);
+
+        for (size_t i = 0; i < p.size(); ++i)
+        {
+            array[i + 0 * p.size()] = p[i].x;
+            array[i + 1 * p.size()] = p[i].y;
+            array[i + 2 * p.size()] = p[i].z;
+        }
+
         auto matrix = GPUMatrix(p.size(), 3);
 
-        cudaMemcpy(matrix.ptr, p.data(), p.size() * sizeof(libcpu::Point3D),
+        cudaMemcpy(matrix.ptr, array.get(), p.size() * 3 * sizeof(float),
                    cudaMemcpyHostToDevice);
 
         return matrix;
@@ -103,31 +112,53 @@ namespace libgpu
     libcpu::point_list GPUMatrix::to_point_list() const
     {
         assert(cols == 3);
-        libcpu::point_list list;
-        list.resize(rows);
+        std::unique_ptr<float[]> array(new float[rows * 3]);
 
-        cudaMemcpy(list.data(), ptr, rows * sizeof(libcpu::Point3D),
+        cudaMemcpy(array.get(), ptr, rows * 3 * sizeof(float),
                    cudaMemcpyDeviceToHost);
+
+        libcpu::point_list list;
+        list.reserve(rows);
+
+        for (size_t i = 0; i < rows; ++i)
+        {
+            list[i].x = array[i + 0 * rows];
+            list[i].y = array[i + 1 * rows];
+            list[i].z = array[i + 2 * rows];
+        }
 
         return list;
     }
 
     GPUMatrix GPUMatrix::from_cpu(const utils::Matrix<float>& cpu)
     {
+        std::unique_ptr<float[]> array(
+            new float[cpu.rows * cpu.cols * sizeof(float)]);
+
+        for (size_t i = 0; i < cpu.rows; ++i)
+            for (size_t j = 0; j < cpu.cols; ++j)
+                array[i + j * cpu.rows] = cpu(i, j);
+
         GPUMatrix res(cpu.rows, cpu.cols);
 
-        cudaMemcpy(res.ptr, cpu.values.data(),
-                   cpu.cols * cpu.rows * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(res.ptr, array.get(), cpu.cols * cpu.rows * sizeof(float),
+                   cudaMemcpyHostToDevice);
 
         return res;
     }
 
     utils::Matrix<float> GPUMatrix::to_cpu() const
     {
+        std::unique_ptr<float[]> array(new float[cols * rows * sizeof(float)]);
+
+        cudaMemcpy(array.get(), ptr, cols * rows * sizeof(float),
+                   cudaMemcpyDeviceToHost);
+
         utils::Matrix<float> res(rows, cols);
 
-        cudaMemcpy(res.values.data(), ptr, cols * rows * sizeof(float),
-                   cudaMemcpyDeviceToHost);
+        for (size_t i = 0; i < rows; ++i)
+            for (size_t j = 0; j < cols; ++j)
+                res(i, j) = array[i + j * rows];
 
         return res;
     }
