@@ -61,24 +61,32 @@ namespace libgpu
     }
 
     __global__ void compute_error_kernel(GPUMatrix m, GPUMatrix p,
-                                         GPUMatrix mu_m, float* error_d)
+                                         GPUMatrix mu_m, GPUMatrix diffs)
     {
-        float error = 0;
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i >= m.rows)
+            return;
 
         assert(m.cols == p.cols);
         assert(m.cols == mu_m.cols);
         assert(mu_m.rows == 1);
 
-        for (size_t i = 0; i < m.rows; ++i)
+        float dist = 0;
+        for (size_t j = 0; j < m.cols; ++j)
         {
-            float dist = 0;
-            for (size_t j = 0; j < m.cols; ++j)
-            {
-                float diff = m(i, j) + mu_m(0, j) - p(i, j);
-                dist += diff * diff;
-            }
-            error += dist;
+            float diff = m(i, j) + mu_m(0, j) - p(i, j);
+            dist += diff * diff;
         }
+
+        diffs(i, 0) = dist;
+    }
+
+    __global__ void compute_error_reduce_kernel(GPUMatrix diffs, float* error_d)
+    {
+        float error = 0;
+
+        for (size_t i = 0; i < diffs.rows; ++i)
+            error += diffs(i, 0);
 
         *error_d = error;
     }
@@ -86,9 +94,15 @@ namespace libgpu
     float compute_error(const GPUMatrix& m, const GPUMatrix& p,
                         const GPUMatrix& mu_m)
     {
+        GPUMatrix diffs(m.rows, 1);
+
+        dim3 blockdim(1024);
+        dim3 griddim((m.rows + blockdim.x - 1) / blockdim.x);
+        compute_error_kernel<<<griddim, blockdim>>>(m, p, mu_m, diffs);
+
         auto error_d = cuda::malloc<float>(1);
 
-        compute_error_kernel<<<1, 1>>>(m, p, mu_m, error_d.get());
+        compute_error_reduce_kernel<<<1, 1>>>(diffs, error_d.get());
 
         float error = 0;
         cudaMemcpy(&error, error_d.get(), sizeof(float),
