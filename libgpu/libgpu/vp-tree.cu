@@ -145,9 +145,7 @@ namespace libgpu
         auto n = d < node->radius ? search(query, node->inside)
                                   : search(query, node->outside);
 
-        float threshold = node->radius - d;
-        if (threshold < 0)
-            threshold = -threshold;
+        float threshold = fabsf(node->radius - d);
         if (n.distance < threshold)
             return n;
 
