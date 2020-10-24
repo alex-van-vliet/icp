@@ -188,8 +188,13 @@ namespace libgpu
                 float d = frame->d;
                 float threshold = fabsf(node->radius - d);
 
-                frame->result = next_frame->result;
-                if (frame->result.distance < threshold)
+                if (d < next_frame->result.distance)
+                    frame->result = {node->center_x, node->center_y,
+                                     node->center_z, d};
+                else
+                    frame->result = next_frame->result;
+
+                if (next_frame->result.distance < threshold)
                     stack_size -= 1;
                 else
                 {

@@ -26,7 +26,7 @@ namespace libcpu
         point_list points;
 
     public:
-        VPTree(uint threshold, const point_list& points);
+        VPTree(uint threshold, point_list points);
 
         std::tuple<Point3D, float> search(const Point3D& query) const;
 
