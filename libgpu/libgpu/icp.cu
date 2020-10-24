@@ -100,19 +100,21 @@ namespace libgpu
     __global__ void apply_alignment_kernel(GPUMatrix p,
                                            GPUMatrix transformation)
     {
-        for (size_t i = 0; i < p.rows; ++i)
-        {
-            float values[3] = {0};
-            for (size_t j = 0; j < p.cols; ++j)
-            {
-                for (size_t k = 0; k < 3; ++k)
-                    values[j] += p(i, k) * transformation(j, k);
-                values[j] += transformation(j, 3);
-            }
+        uint i = blockIdx.x * blockDim.x + threadIdx.x;
 
-            for (size_t j = 0; j < p.cols; ++j)
-                p(i, j) = values[j];
+        if (i >= p.rows)
+            return;
+
+        float values[3] = {0};
+        for (size_t j = 0; j < p.cols; ++j)
+        {
+            for (size_t k = 0; k < 3; ++k)
+                values[j] += p(i, k) * transformation(j, k);
+            values[j] += transformation(j, 3);
         }
+
+        for (size_t j = 0; j < p.cols; ++j)
+            p(i, j) = values[j];
     }
 
     void apply_alignment(GPUMatrix& p, const GPUMatrix& transformation)
@@ -121,7 +123,9 @@ namespace libgpu
         assert(transformation.rows == 4);
         assert(transformation.cols == 4);
 
-        apply_alignment_kernel<<<1, 1>>>(p, transformation);
+        dim3 blockdim(1024);
+        dim3 griddim((p.rows + blockdim.x - 1) / blockdim.x);
+        apply_alignment_kernel<<<griddim, blockdim>>>(p, transformation);
     }
 
     std::tuple<utils::Matrix<float>, libcpu::point_list>
