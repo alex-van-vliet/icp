@@ -5,10 +5,17 @@
 
 #include "point-3d.hh"
 
+namespace libgpu
+{
+    class GPUVPTree;
+}
+
 namespace libcpu
 {
     class VPTree
     {
+        friend class libgpu::GPUVPTree;
+
     private:
         // Internal nodes
         std::unique_ptr<VPTree> inside;

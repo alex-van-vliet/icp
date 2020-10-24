@@ -5,6 +5,7 @@
 #include "icp.hh"
 #include "matrix.hh"
 #include "svd.hh"
+#include "vp-tree.hh"
 
 namespace libgpu
 {
@@ -154,7 +155,9 @@ namespace libgpu
         float error = std::numeric_limits<float>::infinity();
 
         auto mu_m = m.mean();
-        auto m_centered = m.subtract_rowwise(mu_m);
+
+        auto tree = GPUVPTree::from_cpu(
+            libcpu::VPTree(m.subtract_rowwise(mu_m).to_point_list()));
 
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
@@ -162,7 +165,7 @@ namespace libgpu
                       << std::endl;
             auto mu_p = new_p.mean();
             auto p_centered = new_p.subtract_rowwise(mu_p);
-            auto y = p_centered.closest(m_centered);
+            auto y = tree.closest(p_centered);
 
             auto new_transformation = find_alignment(p_centered, mu_p, y, mu_m);
 
