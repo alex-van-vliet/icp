@@ -32,4 +32,5 @@ namespace libcpu
 
         point_list closest(const point_list& queries);
     };
+    float median(std::vector<float> array);
 } // namespace libcpu
