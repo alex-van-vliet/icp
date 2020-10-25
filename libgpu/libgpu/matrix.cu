@@ -155,6 +155,16 @@ namespace libgpu
             mean(0, j) += matrix(i, j);
     }
 
+    __device__ void block_sum_unroll(volatile float* memory, uint tidx)
+    {
+        memory[tidx] += memory[tidx + 32];
+        memory[tidx] += memory[tidx + 16];
+        memory[tidx] += memory[tidx + 8];
+        memory[tidx] += memory[tidx + 4];
+        memory[tidx] += memory[tidx + 2];
+        memory[tidx] += memory[tidx + 1];
+    }
+
     __global__ void block_sum_kernel(GPUMatrix inputs, GPUMatrix res)
     {
         extern __shared__ float all_memory[];
@@ -176,12 +186,15 @@ namespace libgpu
 
         __syncthreads();
 
-        for (uint s = blockDim.x / 2; s > 0; s >>= 1u)
+        for (uint s = blockDim.x / 2; s > 32; s >>= 1u)
         {
             if (threadIdx.x < s)
                 memory[threadIdx.x] += memory[threadIdx.x + s];
             __syncthreads();
         }
+
+        if (threadIdx.x < 32)
+            block_sum_unroll(memory, threadIdx.x);
 
         if (threadIdx.x != 0)
             return;
