@@ -159,7 +159,7 @@ namespace libgpu
     {
         extern __shared__ float all_memory[];
 
-        uint line = blockIdx.x * blockDim.x + threadIdx.x;
+        uint line = blockIdx.x * blockDim.x * 2 + threadIdx.x;
 
         uint i = blockIdx.y * blockDim.y + threadIdx.y;
         if (i >= inputs.cols)
@@ -168,8 +168,11 @@ namespace libgpu
         float* memory = all_memory + i * blockDim.x;
         if (line >= inputs.rows)
             memory[threadIdx.x] = 0;
-        else
+        else if (line + blockDim.x >= inputs.rows)
             memory[threadIdx.x] = inputs(line, i);
+        else
+            memory[threadIdx.x] =
+                inputs(line, i) + inputs(line + blockDim.x, i);
 
         __syncthreads();
 
@@ -197,9 +200,11 @@ namespace libgpu
         divide_kernel<<<griddim_divide, blockdim_divide>>>(*this, divided);
 
         dim3 blockdim_block_sum(256, 4);
+        blockdim_block_sum.x *= 2;
         dim3 griddim_block_sum(
             (divided.rows + blockdim_block_sum.x - 1) / blockdim_block_sum.x,
             (divided.cols + blockdim_block_sum.y - 1) / blockdim_block_sum.y);
+        blockdim_block_sum.x /= 2;
         auto sums = GPUMatrix::zero(griddim_block_sum.x, divided.cols);
         block_sum_kernel<<<griddim_block_sum, blockdim_block_sum,
                            blockdim_block_sum.x * divided.cols
@@ -387,9 +392,11 @@ namespace libgpu
         product_kernel<<<griddim_product, blockdim_product>>>(a, b, products);
 
         dim3 blockdim_sum(64, 16);
+        blockdim_sum.x *= 2;
         dim3 griddim_sum((products.rows + blockdim_sum.x - 1) / blockdim_sum.x,
                          (products.cols + blockdim_sum.y - 1) / blockdim_sum.y);
         auto sums = GPUMatrix::zero(griddim_sum.x, products.cols);
+        blockdim_sum.x /= 2;
         block_sum_kernel<<<griddim_sum, blockdim_sum,
                            blockdim_sum.x * products.cols * sizeof(float)>>>(
             products, sums);
