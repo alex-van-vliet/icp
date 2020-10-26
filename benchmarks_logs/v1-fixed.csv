@@ -1,0 +1,9 @@
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"BM_CPU/0/real_time",1225242,0.00543135,0.00539162,ms,,,"line_translated_2_3_4 -> line_ref",,
+"BM_CPU/1/real_time",4459,1.70033,1.66097,ms,,,"cow_tr1 -> cow_ref",,
+"BM_CPU/2/real_time",474,14.7012,14.5849,ms,,,"cow_tr2 -> cow_ref",,
+"BM_CPU/3/real_time",1,5824.46,5553.32,ms,,,"horse_tr1 -> horse_ref",,
+"BM_CPU/4/real_time",1,5187.26,5170.75,ms,,,"horse_tr2 -> horse_ref",,
+"BM_GPU/0/real_time",30345,0.244931,0.244724,ms,,,"line_translated_2_3_4 -> line_ref",,
+"BM_GPU/1/real_time",6,1191.24,1190.77,ms,,,"cow_tr1 -> cow_ref",,
+"BM_GPU/2/real_time",1,13083,13077,ms,,,"cow_tr2 -> cow_ref",,
