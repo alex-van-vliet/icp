@@ -16,6 +16,14 @@ constexpr test files[] = {
     {"../data/horse/horse_ref.txt", "../data/horse/horse_tr1.txt"},
     {"../data/horse/horse_ref.txt", "../data/horse/horse_tr2.txt"},
 };
+constexpr uint nb_files = sizeof(files) / sizeof(files[0]);
+
+static void CustomArguments(benchmark::internal::Benchmark* b)
+{
+    for (uint vp_threshold = 8; vp_threshold <= 1024; vp_threshold *= 2)
+        for (uint i = 0; i < nb_files; ++i)
+            b->Args({vp_threshold, i});
+}
 
 std::string get_name(const std::string& file)
 {
@@ -31,8 +39,11 @@ std::string get_label(const std::string& ref, const std::string& transformed)
 
 static void BM_CPU(benchmark::State& state)
 {
-    std::string ref = files[state.range(0)].ref;
-    std::string transformed = files[state.range(0)].transformed;
+    uint vp_threshold = state.range(0);
+    uint file_i = state.range(1);
+
+    std::string ref = files[file_i].ref;
+    std::string transformed = files[file_i].transformed;
 
     state.SetLabel(get_label(ref, transformed));
 
@@ -43,14 +54,17 @@ static void BM_CPU(benchmark::State& state)
     for (auto _ : state)
     {
         // This code gets timed
-        benchmark::DoNotOptimize(libcpu::icp(q, p, 200, 1e-5));
+        benchmark::DoNotOptimize(libcpu::icp(q, p, 200, 1e-5, vp_threshold));
     }
 }
 
 static void BM_GPU(benchmark::State& state)
 {
-    std::string ref = files[state.range(0)].ref;
-    std::string transformed = files[state.range(0)].transformed;
+    uint vp_threshold = state.range(0);
+    uint file_i = state.range(1);
+
+    std::string ref = files[file_i].ref;
+    std::string transformed = files[file_i].transformed;
 
     state.SetLabel(get_label(ref, transformed));
 
@@ -61,7 +75,7 @@ static void BM_GPU(benchmark::State& state)
     for (auto _ : state)
     {
         // This code gets timed
-        benchmark::DoNotOptimize(libgpu::icp(q, p, 200, 1e-5));
+        benchmark::DoNotOptimize(libgpu::icp(q, p, 200, 1e-5, vp_threshold));
     }
 }
 
@@ -69,10 +83,10 @@ static void BM_GPU(benchmark::State& state)
 BENCHMARK(BM_CPU)
     ->Unit(benchmark::kMillisecond)
     ->UseRealTime()
-    ->DenseRange(0, sizeof(files) / sizeof(files[0]) - 1);
+    ->Apply(CustomArguments);
 BENCHMARK(BM_GPU)
     ->Unit(benchmark::kMillisecond)
     ->UseRealTime()
-    ->DenseRange(0, sizeof(files) / sizeof(files[0]) - 1);
+    ->Apply(CustomArguments);
 // Run the benchmark
 BENCHMARK_MAIN();

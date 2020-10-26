@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
         std::cout << "Result:" << std::endl;
         std::cout << res_p_e << std::endl;
     */
-    auto [transform, new_p] = libgpu::icp(q, p, 200, 1e-5);
+    auto [transform, new_p] = libgpu::icp(q, p, 200, 1e-5, 8);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)

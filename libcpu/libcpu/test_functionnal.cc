@@ -2,7 +2,6 @@
 #include "icp.hh"
 #include "point-3d.hh"
 
-
 namespace
 {
     using namespace libcpu;
@@ -12,10 +11,10 @@ namespace
         auto q = libcpu::read_csv(file1, "Points_0", "Points_1", "Points_2");
         auto p = libcpu::read_csv(file2, "Points_0", "Points_1", "Points_2");
 
-        auto [transform, new_p] = libcpu::icp(q, p, 200, 1e-5);
+        auto [transform, new_p] = libcpu::icp(q, p, 200, 1e-5, 8);
         ASSERT_EQ(q == new_p, true);
 
-        apply_alignment(p , transform);
+        apply_alignment(p, transform);
         ASSERT_EQ(p == q, true);
     }
 
@@ -43,5 +42,4 @@ namespace
         wrapper(file1, file2);
     }
 
-
-} //namespace
+} // namespace

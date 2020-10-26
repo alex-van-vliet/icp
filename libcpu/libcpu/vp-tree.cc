@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-constexpr uint THRESHOLD = 8;
 namespace libcpu
 {
     size_t partition(float* array, size_t n)
@@ -45,9 +44,9 @@ namespace libcpu
         return select(array.data(), array.size(), array.size() / 2);
     }
 
-    VPTree::VPTree(const point_list& points)
+    VPTree::VPTree(uint threshold, const point_list& points)
     {
-        if (points.size() < THRESHOLD)
+        if (points.size() < threshold)
         {
             this->points = points;
             this->inside = nullptr;
@@ -102,8 +101,8 @@ namespace libcpu
             std::swap(inside_points.back(), inside_points[inside_keep]);
             std::swap(outside_points.back(), outside_points[outside_keep]);
 
-            this->inside = std::make_unique<VPTree>(inside_points);
-            this->outside = std::make_unique<VPTree>(outside_points);
+            this->inside = std::make_unique<VPTree>(threshold, inside_points);
+            this->outside = std::make_unique<VPTree>(threshold, outside_points);
         }
     }
 

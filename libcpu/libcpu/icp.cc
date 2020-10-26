@@ -94,10 +94,9 @@ namespace libcpu
         return error;
     }
 
-    std::tuple<utils::Matrix<float>, point_list> icp(const point_list& m,
-                                                     const point_list& p,
-                                                     size_t iterations,
-                                                     float threshold)
+    std::tuple<utils::Matrix<float>, point_list>
+    icp(const point_list& m, const point_list& p, size_t iterations,
+        float threshold, uint vp_threshold)
     {
         auto transformation = utils::eye<float>(4);
 
@@ -106,7 +105,7 @@ namespace libcpu
 
         auto mu_m = mean(m);
 
-        VPTree tree(subtract(m, mu_m));
+        VPTree tree(vp_threshold, subtract(m, mu_m));
 
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {

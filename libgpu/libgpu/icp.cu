@@ -145,7 +145,7 @@ namespace libgpu
 
     std::tuple<utils::Matrix<float>, libcpu::point_list>
     icp(const libcpu::point_list& m_cpu, const libcpu::point_list& p,
-        size_t iterations, float threshold)
+        size_t iterations, float threshold, uint vp_threshold)
     {
         auto new_p = GPUMatrix::from_point_list(p);
         auto m = GPUMatrix::from_point_list(m_cpu);
@@ -156,8 +156,8 @@ namespace libgpu
 
         auto mu_m = m.mean();
 
-        auto tree = GPUVPTree::from_cpu(
-            libcpu::VPTree(m.subtract_rowwise(mu_m).to_point_list()));
+        auto tree = GPUVPTree::from_cpu(libcpu::VPTree(
+            vp_threshold, m.subtract_rowwise(mu_m).to_point_list()));
 
         for (size_t i = 0; i < iterations && error > threshold; ++i)
         {
