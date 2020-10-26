@@ -201,6 +201,29 @@ namespace libgpu
         res(blockIdx.x, i) = memory[0];
     }
 
+    GPUMatrix GPUMatrix::sum_colwise() const
+    {
+        assert(cols > 0 && cols <= 16);
+        constexpr uint block_widths[] = {0,  1,  2,  4,  4,  8,  8,  8, 8,
+                                         16, 16, 16, 16, 16, 16, 16, 16};
+        uint block_width = block_widths[cols];
+
+        dim3 blockdim_block_sum(1024 / block_width, block_width);
+        blockdim_block_sum.x *= 2;
+        dim3 griddim_block_sum(
+            (rows + blockdim_block_sum.x - 1) / blockdim_block_sum.x,
+            (cols + blockdim_block_sum.y - 1) / blockdim_block_sum.y);
+        blockdim_block_sum.x /= 2;
+        auto sums = GPUMatrix::zero(griddim_block_sum.x, cols);
+        block_sum_kernel<<<griddim_block_sum, blockdim_block_sum,
+                           blockdim_block_sum.x * cols * sizeof(float)>>>(*this,
+                                                                          sums);
+
+        if (sums.rows == 1)
+            return sums;
+        return sums.sum_colwise();
+    }
+
     GPUMatrix GPUMatrix::mean() const
     {
         assert(cols == 3);
@@ -212,24 +235,7 @@ namespace libgpu
                             (cols + blockdim_divide.y - 1) / blockdim_divide.y);
         divide_kernel<<<griddim_divide, blockdim_divide>>>(*this, divided);
 
-        dim3 blockdim_block_sum(256, 4);
-        blockdim_block_sum.x *= 2;
-        dim3 griddim_block_sum(
-            (divided.rows + blockdim_block_sum.x - 1) / blockdim_block_sum.x,
-            (divided.cols + blockdim_block_sum.y - 1) / blockdim_block_sum.y);
-        blockdim_block_sum.x /= 2;
-        auto sums = GPUMatrix::zero(griddim_block_sum.x, divided.cols);
-        block_sum_kernel<<<griddim_block_sum, blockdim_block_sum,
-                           blockdim_block_sum.x * divided.cols
-                               * sizeof(float)>>>(divided, sums);
-
-        auto mean = GPUMatrix::zero(1, cols);
-
-        dim3 blockdim_sum(1, 32);
-        dim3 griddim_sum(1, (cols + blockdim_sum.y - 1) / blockdim_sum.y);
-        sum_kernel<<<griddim_sum, blockdim_sum>>>(sums, mean);
-
-        return mean;
+        return divided.sum_colwise();
     }
 
     __global__ void subtract_rowwise_kernel(GPUMatrix a, GPUMatrix b,
@@ -386,8 +392,7 @@ namespace libgpu
             return;
 
         uint pos = j * res.cols + k;
-        for (size_t i = 0; i < products.rows; ++i)
-            res(j, k) += products(i, pos);
+        res(j, k) = products(0, pos);
     }
 
     GPUMatrix GPUMatrix::find_covariance(const GPUMatrix& a, const GPUMatrix& b)
@@ -404,15 +409,7 @@ namespace libgpu
             (b.cols + blockdim_product.z - 1) / blockdim_product.z);
         product_kernel<<<griddim_product, blockdim_product>>>(a, b, products);
 
-        dim3 blockdim_sum(64, 16);
-        blockdim_sum.x *= 2;
-        dim3 griddim_sum((products.rows + blockdim_sum.x - 1) / blockdim_sum.x,
-                         (products.cols + blockdim_sum.y - 1) / blockdim_sum.y);
-        auto sums = GPUMatrix::zero(griddim_sum.x, products.cols);
-        blockdim_sum.x /= 2;
-        block_sum_kernel<<<griddim_sum, blockdim_sum,
-                           blockdim_sum.x * products.cols * sizeof(float)>>>(
-            products, sums);
+        auto sums = products.sum_colwise();
 
         auto res = GPUMatrix::zero(a.cols, b.cols);
         dim3 blockdim(32, 32);

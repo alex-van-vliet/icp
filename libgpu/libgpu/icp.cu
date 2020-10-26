@@ -101,15 +101,7 @@ namespace libgpu
         dim3 griddim((m.rows + blockdim.x - 1) / blockdim.x);
         compute_error_kernel<<<griddim, blockdim>>>(m, p, mu_m, diffs);
 
-        auto error_d = cuda::malloc<float>(1);
-
-        compute_error_reduce_kernel<<<1, 1>>>(diffs, error_d.get());
-
-        float error = 0;
-        cudaMemcpy(&error, error_d.get(), sizeof(float),
-                   cudaMemcpyDeviceToHost);
-
-        return error;
+        return diffs.sum_colwise().to_cpu()(0, 0);
     }
 
     __global__ void apply_alignment_kernel(GPUMatrix p,

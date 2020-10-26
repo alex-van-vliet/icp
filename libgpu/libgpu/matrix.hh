@@ -52,6 +52,8 @@ namespace libgpu
 
         GPUMatrix mean() const;
 
+        GPUMatrix sum_colwise() const;
+
         GPUMatrix subtract(const GPUMatrix& matrix) const;
 
         GPUMatrix subtract_rowwise(const GPUMatrix& matrix) const;
