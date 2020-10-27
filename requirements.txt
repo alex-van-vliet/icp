@@ -4,3 +4,4 @@ matplotlib
 pathlib
 jupyter
 notebook
+tabulate
