@@ -1,0 +1,6 @@
+seaborn
+pandas
+matplotlib
+pathlib
+jupyter
+notebook
