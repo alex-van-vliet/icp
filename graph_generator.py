@@ -4,6 +4,7 @@ from pathlib import Path
 import seaborn as sns
 from IPython.display import display, HTML
 from matplotlib import pyplot as plt
+import matplotlib.patches as mpatches
 
 
 # %%
@@ -25,23 +26,26 @@ def threshold_vs_time(bench):
 
 # %%
 def time_vs_version(all_benches, min_version=None):
-    fig, axs = plt.subplots(nrows=len(all_benches.test_id.unique()), ncols=2, figsize=(12, 20))
+    fig, axs = plt.subplots(nrows=len(all_benches.test_id.unique()), figsize=(8, 20))
     plt.subplots_adjust(hspace=0.4)
 
     def time_vs_version_specialized(i, test_id, run_type, min_version=None):
-        type_index = 0 if run_type == "BM_CPU" else 1
+        handle = [mpatches.Patch(color="red", label="GPU"), mpatches.Patch(color="blue", label="CPU")]
+        axs[i].legend(handles=handle)
 
+        color = "blue" if run_type == "BM_CPU" else "red"
+        threshold = 32 if run_type == "BM_CPU" else 256
 
         bench_type = all_benches[(all_benches["type"] == run_type) & (all_benches["test_id"] == test_id)]
         if min_version is not None:
             bench_type = bench_type[bench_type["bench"] > min_version]
-        bench_type = bench_type[(bench_type.threshold.isna()) | (bench_type.threshold == "256")]
+        bench_type = bench_type[(bench_type.threshold.isna()) | (bench_type.threshold == str(threshold))]
         bench_type = bench_type.sort_values("bench")
 
-        sns.lineplot(data=bench_type, x="bench", y="cpu_time", ax=axs[i, type_index])
-        axs[i, type_index].set_title(f"{run_type[-3:]}: {bench_type.iloc[0].label}")
-        axs[i, type_index].set_xlabel("versions")
-        axs[i, type_index].set_ylabel("time in ms")
+        sns.lineplot(data=bench_type, x="bench", y="cpu_time", ax=axs[i], color=color)
+        axs[i].set_title(f"{run_type[-3:]}: {bench_type.iloc[0].label}")
+        axs[i].set_xlabel("versions")
+        axs[i].set_ylabel("time in ms")
 
     for i, test_id in enumerate(all_benches.test_id.unique()):
         time_vs_version_specialized(i, test_id, "BM_CPU", min_version)
@@ -70,6 +74,8 @@ def get_benchmark(bench_path):
         print(f"Unhandled case: {bench_path.name}")
 
     threshold_vs_time(csv)
+    with open(f"bench_dataframes/{csv.iloc[0].bench}.md", "w") as file:
+        file.write(csv.to_markdown(tablefmt="grid"))
 
     return csv
 
