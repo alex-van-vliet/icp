@@ -58,10 +58,36 @@ namespace
         return 2;
     }
 
+    int handle_iterations(options::options& options, int argc, char* argv[])
+    {
+        if (argc <= 1)
+        {
+            std::cerr << "Missing iterations." << std::endl;
+            return 0;
+        }
+        try
+        {
+            int iterations = std::stoi(argv[1]);
+            if (iterations >= 0)
+                options.iterations = iterations;
+            else
+            {
+                std::cerr << "Invalid iterations: " << iterations << std::endl;
+                return false;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Invalid iterations: " << argv[1] << std::endl;
+            return false;
+        }
+        return 2;
+    }
+
     constexpr available_options available_options[] = {
         {
             .flag = "--device",
-            .help = "cpu|gpu: to run on gpu [default: gpu]",
+            .help = "cpu|gpu: the device to run on [default: gpu]",
             .callback = handle_device,
         },
         {
@@ -69,6 +95,12 @@ namespace
             .help = "<capacity>: the vp tree capacity [default: 32 on cpu, 256 "
                     "on gpu]",
             .callback = handle_capacity,
+        },
+        {
+            .flag = "--iterations",
+            .help =
+                "<iterations>: the maximum number of iterations [default: 200]",
+            .callback = handle_iterations,
         },
     };
 
@@ -82,6 +114,7 @@ namespace options
         options.transformed = argv[1];
         options.gpu = true;
         options.capacity = 0;
+        options.iterations = 200;
         if (argc < 2)
             return false;
 

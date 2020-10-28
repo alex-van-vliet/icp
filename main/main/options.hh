@@ -10,6 +10,7 @@ namespace options
         char* transformed;
         bool gpu;
         uint capacity;
+        uint iterations;
     };
 
     int parse_options(options& options, int argc, char* argv[]);

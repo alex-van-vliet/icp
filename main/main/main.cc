@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
     std::cout << "Parameters:" << std::endl;
     std::cout << "    Device: " << (options.gpu ? "GPU" : "CPU") << std::endl;
     std::cout << "    Capacity: " << options.capacity << std::endl;
+    std::cout << "    Max iterations: " << options.iterations << std::endl;
 
     const char* q_path = options.reference;
     auto q = libcpu::read_csv(q_path, "Points_0", "Points_1", "Points_2");
@@ -24,8 +25,8 @@ int main(int argc, char* argv[])
     auto p = libcpu::read_csv(p_path, "Points_0", "Points_1", "Points_2");
 
     auto [transform, new_p] = options.gpu
-        ? libgpu::icp(q, p, 200, 1e-5, options.capacity)
-        : libcpu::icp(q, p, 200, 1e-5, options.capacity);
+        ? libgpu::icp(q, p, options.iterations, 1e-5, options.capacity)
+        : libcpu::icp(q, p, options.iterations, 1e-5, options.capacity);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)
