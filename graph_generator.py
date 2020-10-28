@@ -81,7 +81,7 @@ def get_benchmark(bench_path):
 
 # %%
 def main():
-    benchs = Path("benchs")
+    benchs = Path("benchmarks_logs")
 
     dfs = []
 
