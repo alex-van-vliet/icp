@@ -118,27 +118,33 @@ Notre méthodologie était la suivante. Dès que nous avons eu notre première v
 
 ## v7: Matrices en column-major order
 
-## v8: Ajout d'un VP Tree
+## Ajout d'un VP Tree (v8 à v11)
 
-## v9: VP Tree recherche en itératif
+Un Vantage-Point Tree (vp-tree) est une structure de données qui permet de trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques. La structure est simple: chaque noeud interne contient quatres informations: un centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points contenus dans la sphère de centre et de rayon donnés seront donc dans le fils "intérieur" et les autres dans le fils "extérieur". On répète celà récursivement jusqu'à ce qu'on atteigne une certaine capacité: lorsque le nombre de points est inférieur à cette capacité, on les stocke directement dans le noeud.
 
-## v10: Ne plus inclure le centre dans la liste de noeuds
+La construction du vp-tree est assez simple mais pose deux questions: comment choisir le centre et le rayon. Dans beaucoup d'implémentations (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4765211, https://fribbels.github.io/vptree/writeup, http://stevehanov.ca/blog/?id=130), le centre est choisi au hasard. Dans d'autres (https://github.com/RickardSjogren/vptree), il est choisi comme étant le plus éloigné du centre parent. Nous avons choisi cette deuxième méthode pour sa simplicité et reproductibilité. Le rayon est lui choisit comme étant la médiane afin d'équilibrer l'arbre et donc d'assurer le `O(log n)` sur la recherche. Nous le construisons d'abord sur CPU et l'envoyons sur GPU.
 
-## v11: Ne plus inclure le centre (version récursive)
+La recherche est fondamentalement récursive. Disons qu'on recherche le point le plus proche au point `Q`. On calcule `dist(Q, centre)` et on descend dans le fils "intérieur" (respectivement "extérieur") si la distance est plus petite (respectivement plus grande ou égale) au rayon. A la remontée, on a donc trouvé un point `N` le plus proche. Si `dist(Q, N) < |rayon - dist(Q, centre)|`, c'est-à-dire que la distance entre le point recherché et le point trouvé est inférieure à la distance entre le point recherché et le bord de la sphère, alors on a effectivement trouvé le point le plus proche. Sinon il faut aussi descendre dans l'autre fils et renvoyer le fils le plus proche entre les deux descentes.
 
-## v12: Séparation de la covariance en produit et somme
+Notre première implémentation, récursive, augmentait bien radicalement les performances, mais le closest point restait le ralentisement principal. Nous avons donc essayé 4 versions différentes:
 
-## v13: Somme par block pour le kernel de covariance
+- récursive (v8),
+- itérative (v9),
+- itérative (v10) mais en retirant le closest point des données à la construction, il faut donc le rajouter lorsqu'on remonte de la recherche,
+- récursive (v11), idem.
 
-## v14: block add mean sum
+![Performances v08 à v11](v08-v09-v10-v11-best.png "Performances v08 à v11")
 
-## v15: Utilisation des warps pour réduire les sommes de blocks (moyenne & covariance)
+On remarque sur le graphique qu'en général la v10 est soit au alentours de la meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous avons choisi.
 
-## v16: Somme par blocks sur les éléments deux à deux (moyenne & covariance)
+## Optimisation des sommes-réductions (v12 à v18)
 
-## v17: Déroulement de boucle pour les sommes de blocks (moyenne & covariance)
+Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommende d'améliorer d'autres kernels: les sommes qui sont des réductions. Ce sont donc: le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommendation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia (https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf). La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
 
-## v18: TODO
+![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
+
+On remarque bien une accélération, d'abord très conséquente, puis plus petite, du temps d'exécution. Il est aussi étonnant de voir que la v12 est plus rapide sur CPU que sur GPU, mais cela s'inverse dès la v13.
+
 
 # Summary
 
