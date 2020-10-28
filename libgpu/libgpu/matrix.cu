@@ -35,6 +35,8 @@ namespace libgpu
         assert(cols == other.cols);
         assert(rows == other.rows);
 
+        if (ptr && should_delete)
+            cuda::free(ptr);
         ptr = std::exchange(other.ptr, nullptr);
         should_delete = other.should_delete;
         return *this;
