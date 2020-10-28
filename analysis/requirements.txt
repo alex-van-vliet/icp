@@ -5,3 +5,4 @@ pathlib
 jupyter
 notebook
 tabulate
+scikit-image
