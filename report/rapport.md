@@ -67,6 +67,8 @@ Source: https://github.com/google/benchmark
 Google Benchmark est l'outil de benchmarking qui a été utilisé pour réaliser tous les benchmarks présents dans ce rapport. Ce framework nous
 a permis de tester si nos dernières améliorations impactaient la performance de notre programme autant sur la partie CPU que la partie GPU.
 
+Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple, le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU, tandis que le temps d'exécution des kernels aussi puisqu'il ne prendrait pas en compte le temps d'échange des données.
+
 
 ## Flamegraph
 
