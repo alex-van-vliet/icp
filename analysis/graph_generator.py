@@ -86,8 +86,9 @@ def compare_best(bench):
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
+    comparison = comparison.drop(columns=['test_id'])
     with mkopen(f"results/comparisons/{bench.iloc[0].bench}-best.md", "w") as file:
-        file.write(comparison.to_markdown(tablefmt="github"))
+        file.write(comparison.to_markdown(index=False, tablefmt="github"))
 
 
 def compare(bench):
@@ -108,8 +109,9 @@ def compare(bench):
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
+    comparison = comparison.drop(columns=['test_id'])
     with mkopen(f"results/comparisons/{bench.iloc[0].bench}.md", "w") as file:
-        file.write(comparison.to_markdown(tablefmt="github"))
+        file.write(comparison.to_markdown(index=False, tablefmt="github"))
 
 def compare_graph(all_benches, versions=None, best=False):
     fig, ax = plt.subplots(**get_figsize(50), nrows=1, ncols=1)
