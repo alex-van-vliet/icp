@@ -105,7 +105,7 @@ namespace libgpu
         /**
          * @brief Search the tree.
          * @param query The query point.
-         * @return The closest point.
+         * @return The closest point and its distance to the query.
          */
         __device__ GPUVPTreeSearchResult search(const float query[3]);
     };

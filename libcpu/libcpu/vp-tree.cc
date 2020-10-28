@@ -25,6 +25,13 @@ namespace libcpu
         return left;
     }
 
+    /**
+     * @brief Select the nth value in order in an array using quick select.
+     * @param array The array.
+     * @param n The number of the value in order.
+     * @param s The size of the array.
+     * @return The value at the position.
+     */
     float select(float* array, size_t n, size_t s)
     {
         size_t pivot_position = partition(array, n);
@@ -54,9 +61,11 @@ namespace libcpu
         }
         else
         {
+            // Use the last point as center
             this->center = points.back();
             points.pop_back();
 
+            // Compute the distances from each point to the center.
             std::vector<float> distances;
             distances.resize(points.size());
 
@@ -64,9 +73,11 @@ namespace libcpu
             for (size_t i = 0; i < points.size(); ++i)
                 distances[i] = squared_distance(this->center, points[i]);
 
+            // Get the median distance.
             float squared_radius = median(distances);
             this->radius = sqrt(squared_radius);
 
+            // Split the points into inside and outside.
             point_list inside_points;
             point_list outside_points;
 
@@ -99,18 +110,24 @@ namespace libcpu
                 }
             }
 
+            // Put the furthest from the center at the end.
             std::swap(inside_points.back(), inside_points[inside_keep]);
             std::swap(outside_points.back(), outside_points[outside_keep]);
 
-            this->inside = std::make_unique<VPTree>(threshold, std::move(inside_points));
-            this->outside = std::make_unique<VPTree>(threshold, std::move(outside_points));
+            // Recurse
+            this->inside =
+                std::make_unique<VPTree>(threshold, std::move(inside_points));
+            this->outside =
+                std::make_unique<VPTree>(threshold, std::move(outside_points));
         }
     }
 
     std::tuple<Point3D, float> VPTree::search(const Point3D& query) const
     {
+        // If the node doesn't have children.
         if (!this->inside)
         {
+            // Search the closest points linearly
             size_t closest_i = 0;
             float closest_dist = sqrt(squared_distance(query, points[0]));
             for (size_t i = 1; i < points.size(); ++i)
@@ -126,9 +143,12 @@ namespace libcpu
             return {points[closest_i], closest_dist};
         }
 
+        // Get the distance between the query and the center and recurse
         float d = sqrt(squared_distance(query, center));
         auto n = d < radius ? inside->search(query) : outside->search(query);
 
+        // If the distance to the closest point is less than the distance to the
+        // outside
         if (std::get<1>(n) < abs(radius - d))
         {
             if (d < std::get<1>(n))
@@ -136,8 +156,10 @@ namespace libcpu
             return n;
         }
 
+        // Recurse on the other side
         auto o = d < radius ? outside->search(query) : inside->search(query);
 
+        // Return the smallest
         if (std::get<1>(o) < std::get<1>(n))
         {
             if (d < std::get<1>(o))

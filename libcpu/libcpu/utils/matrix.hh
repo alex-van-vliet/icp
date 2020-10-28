@@ -13,10 +13,12 @@ namespace utils
         using mat = std::vector<DATA>;
 
     public:
-        /*
-        ** i: rows
-        ** j: cols
-        */
+        /**
+         * @brief Create a new matrix initialized with a given value.
+         * @param i The number of rows.
+         * @param j The number of columns.
+         * @param default_val The default value.
+         */
         Matrix(size_t i, size_t j, DATA default_val = 0)
             : rows(i)
             , cols(j)
@@ -24,6 +26,10 @@ namespace utils
             values = mat(j * i, default_val);
         }
 
+        /**
+         * @brief Create a new matrix using values.
+         * @param list The values.
+         */
         Matrix(std::initializer_list<std::initializer_list<DATA>> list)
             : rows(list.size())
             , cols(std::begin(list)->size())
@@ -39,6 +45,11 @@ namespace utils
 
         Matrix(const Matrix<DATA>&) = default;
 
+        /**
+         * @brief Copy the matrix into an existing one.
+         * @param other The matrix to copy from.
+         * @return This.
+         */
         Matrix& operator=(const Matrix<DATA>& other)
         {
             assert(other.cols == cols);
@@ -47,9 +58,14 @@ namespace utils
             return *this;
         }
 
-        Matrix(Matrix<DATA>&&) = default;
+        Matrix(Matrix<DATA>&&) noexcept = default;
 
-        Matrix& operator=(Matrix<DATA>&& other)
+        /**
+         * @brief Move the matrix into an existing one.
+         * @param other The matrix to move from.
+         * @return This.
+         */
+        Matrix& operator=(Matrix<DATA>&& other) noexcept
         {
             assert(other.cols == cols);
             assert(other.rows == rows);
@@ -59,18 +75,50 @@ namespace utils
 
         ~Matrix() = default;
 
+        /**
+         * @brief Get an element.
+         * @param i The row number.
+         * @param j The column number.
+         * @return The element.
+         */
         DATA get(size_t i, size_t j) const;
 
+        /**
+         * @brief Set an element.
+         * @param i The row number.
+         * @param j The column number.
+         * @param val The value.
+         */
         void set(size_t i, size_t j, DATA val);
 
+        /**
+         * @brief Access to one element.
+         * @param i The row number.
+         * @param j The column number.
+         * @return The element.
+         */
         DATA& operator()(size_t i, size_t j);
+        /**
+         * @brief Access to one element.
+         * @param i The row number.
+         * @param j The column number.
+         * @return The element.
+         */
         DATA operator()(size_t i, size_t j) const;
 
-        template <int nb_iter>
-        Matrix<DATA> largest_eigenvector();
-
+        /**
+         * @brief Normalize the matrix.
+         */
         void normalize();
 
+        /**
+         * @brief Get a submatrix.
+         * @param i_start The starting row (included).
+         * @param i_end The ending row (not included).
+         * @param j_start The starting column (included).
+         * @param j_end The ending column (not included).
+         * @return The submatrix.
+         */
         Matrix<DATA> submatrix(size_t i_start, size_t i_end, size_t j_start,
                                size_t j_end);
 
