@@ -5,6 +5,7 @@ author:
 - Théophane Vié
 - Paul Khuat-Duy
 titlepage: true
+lang: fr
 ...
 
 \newpage
