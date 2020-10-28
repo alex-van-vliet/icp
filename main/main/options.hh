@@ -9,6 +9,7 @@ namespace options
         char* reference;
         char* transformed;
         bool gpu;
+        uint capacity;
     };
 
     int parse_options(options& options, int argc, char* argv[]);

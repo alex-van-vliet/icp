@@ -14,15 +14,18 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::cout << "Running on " << (options.gpu ? "GPU" : "CPU") << std::endl;
+    std::cout << "Parameters:" << std::endl;
+    std::cout << "    Device: " << (options.gpu ? "GPU" : "CPU") << std::endl;
+    std::cout << "    Capacity: " << options.capacity << std::endl;
 
     const char* q_path = options.reference;
     auto q = libcpu::read_csv(q_path, "Points_0", "Points_1", "Points_2");
     const char* p_path = options.transformed;
     auto p = libcpu::read_csv(p_path, "Points_0", "Points_1", "Points_2");
 
-    auto [transform, new_p] = options.gpu ? libgpu::icp(q, p, 200, 1e-5, 8)
-                                          : libcpu::icp(q, p, 200, 1e-5, 8);
+    auto [transform, new_p] = options.gpu
+        ? libgpu::icp(q, p, 200, 1e-5, options.capacity)
+        : libcpu::icp(q, p, 200, 1e-5, options.capacity);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)
