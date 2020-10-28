@@ -1,7 +1,7 @@
 ---
 title: Who's the fastest ?
 author:
-- Alex Van Vliet
+- Alex van Vliet
 - Théophane Vié
 - Paul Khuat-Duy
 ...
