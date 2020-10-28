@@ -93,7 +93,7 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 
 # Améliorations
 
-## v2: Ne plus utiliser de ManagedMemory
+## v2: Parallélisation du closest point
 
 ## v3: Parallélisation  de la moyenne
 
