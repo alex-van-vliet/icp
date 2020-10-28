@@ -27,6 +27,9 @@ namespace libgpu
 
     GPUVPTree& GPUVPTree::operator=(GPUVPTree&& other) noexcept
     {
+        if (pointer && should_delete)
+            cuda::free(pointer);
+
         pointer = std::exchange(other.pointer, nullptr);
         should_delete = other.should_delete;
 
