@@ -11,33 +11,43 @@ titlepage: true
 
 # Introduction
 
-## ICP
+L'Iterative Closest Point (ICP) est un algorithme d'alignement de nuages de points. Il permet de déterminer la transformation entre deux nuages de points représentant un même objet dans deux positions différentes en minimisant de manière itérative la distance entre les points. C'est un algorithme très utilisé en robotique et vision par ordinateur, notamment pour les algorithmes de Simultaneous Localisation And Mapping (SLAM), pour la reconstruction de surfaces et de volumes...
 
-L'algorithme de l'ICP (Iterative closest point) permet de minimiser la distance entre le nuage de point d'un objet dans deux position différentes.
+Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins d'étapes en fonction du résultat recherché. Voici les étapes de l'algorithme que nous avons choisi :
 
-Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins d'étape en fonction du résultat rechérché. Voici les étapes de l'algorithme que nous avons choisi :
+- centrage des deux nuages de points,
+- détermination des associations (appelé nuage associé) entre les nuages centrés, c'est-à-dire pour chaque point dans le premier nuage de point, détection de son point le plus proche dans le deuxième,
+- calcul de la matrice de transformation pour passer du premier nuage centré à son nuage associé en utilisant une décomposition en valeurs singulières de la matrice de covariance,
+- application de la matrice au premier nuage.
 
-- détection des points les plus proches dans les deux nuages de points
-- calcul de la matrice de transformation pour passer des points les plus proches aux autres
-- application de la matrice au premier nuage
+Ces étapes sont reproduites tant que l'erreur n'est pas suffisament faible, c'est à dire tant que les deux nuages de points ne sont pas superposés, ou qu'un nombre d'itérations maximal n'est pas atteint.
 
-Ces étapes sont reproduites tant que l'erreur n'est pas suffisament faible, c'est à dire tant que les deux nuages de points ne sont pas superposés.
+# Première implémentation
 
+## CPU
 
-# Implémentation CPU
+Notre première implémentation CPU est très simple: c'est une traduction en C++ de l'explication précédente en utilisant un `std::vector` de `Point3D` pour représenter les nuages de points et une classe `Matrix` pour la matrice de transformation. La SVD est faite avec `Eigen`, une bibliothèque d'algèbre linéaire en C++. Une fois cette version basique fonctionnelle, nous avons parallélisé le calcul du point le plus proche, en lançant les recherches sur plusieurs threads, et le centrage des nuages de points en utilisant OpenMP. Une petite amélioration algorithmique a aussi été ajoutée: il suffit de centrer le nuage de points d'arrivée une seule fois puisqu'il ne change pas.
 
-Source : http://www.sci.utah.edu/~shireen/pdfs/tutorials/Elhabian_ICP09.pdf
+Source : http://www.sci.utah.edu/~shireen/pdfs/tutorials/Elhabian_ICP09.pdf https://github.com/niosus/notebooks/blob/master/icp.ipynb https://www.youtube.com/watch?v=QWDM4cFdKrE
 
-Parties parallélisée :
+## GPU
 
-- recherche du point le plus proche
-- recentrer le nuage de points
+Pour la première implémentation GPU, plutôt que de tout réécrire directement, nous avons d'abord essayé une version avec de la mémoire managée (c'est-à-dire partagée entre le CPU et le GPU). L'idée était simple : afin de ne pas réécrire tout le code, il suffisait de changer les allocations et la mémoire managée faisait le reste. Nous pourrions ensuite analyser les performances et passer sur GPU les parties problématique.
 
+Malheureusement, ce n'était pas si facile. Après ce changement, la vitesse était si mauvaise que nous avons supprimé cette version pour recommencer. Apprenant de nos erreurs, nous avons analysé quelles parties pourraient aller sur GPU et à quels moments les transfers de mémoires étaient nécessaires. Nous avons ensuite conclus que toutes les parties itérant sur les points des nuages pourraient bénéficier d'une accélération en étant sur GPU, c'est-à-dire tout sauf la SVD que nous avons gardé sur CPU. Il reste donc trois transferts de mémoires:
+- à l'initialisation il faut envoyer les points sur le GPU,
+- pour la SVD, mais il s'agit que de deux fois neufs valeurs,
+- après la fin de l'algorithme pour récupérer le résultat.
 
-# Implementation GPU
+Nous avons donc conclus qu'effectivement la mémoire managée était une mauvaise idée puisqu'il n'était vraiment pas nécessaire d'avoir les informations sur GPU et CPU en même temps.
 
-Perfs: Plus lent que le CPU
-Utilisation de ManagedMemory partout pour ne pas avoir a se préoccuper des accès entre CPU et GPU
+## Performances
+
+![](v01.png "test")
+
+!include v01.md
+
+Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette version restait beaucoup plus lente que notre référence, mais était beaucoup plus simplement analysable, avec un code beaucoup plus propre. On note que la version gpu est environ mille fois plus lentes sur cow et crash sur gpu parce que les kernels prennent trop de temps.
 
 # Indicateurs de performance
 
