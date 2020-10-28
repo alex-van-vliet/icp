@@ -104,6 +104,32 @@ def compare(bench):
     with mkopen(f"results/comparisons/{bench.iloc[0].bench}.md", "w") as file:
         file.write(comparison.to_markdown(tablefmt="github"))
 
+def compare_graph(all_benches, versions=None, best=False):
+    fig, ax = plt.subplots(figsize=(12, 30), nrows=1, ncols=1)
+    if not versions:
+        versions = all_benches['bench'].unique()
+    benches = all_benches[all_benches['bench'].isin(versions)].copy()
+    if best:
+        benches = benches.groupby(by=['bench', 'type', 'test_id', 'label']).min('real_time')
+        benches = benches.reset_index()
+    def name(row):
+        method = {'BM_CPU': 'cpu', 'BM_GPU': 'gpu'}[row['type']]
+        bench = row['bench']
+        if 'threshold' in row and not row.isna()['threshold']:
+            threshold = row['threshold']
+            return f"{bench}-{threshold}-{method}"
+        return f"{bench}-{method}"
+    def order(name):
+        t = name.split('-')
+        if len(t) == 2:
+            return (*t,)
+        return (t[0], int(t[1]), t[2])
+    benches['type'] = benches.apply(name, axis=1)
+    order = sorted(benches['type'].unique(), key=order)
+    sns.barplot(x="label", y="real_time", hue='type', hue_order=order, data=benches, ci=None)
+    with mkopen(f"results/comparisons_graphs/{'-'.join(versions)}{'-best' if best else ''}.png", "wb") as file:
+        fig.savefig(file)
+
 # %%
 def get_benchmark(bench_path):
     csv = pd.read_csv(bench_path)
@@ -127,6 +153,7 @@ def get_benchmark(bench_path):
     threshold_vs_time(csv)
     compare(csv)
     compare_best(csv)
+    compare_graph(csv)
     with mkopen(f"results/dataframes/{csv.iloc[0].bench}.md", "w") as file:
         file.write(csv.to_markdown(tablefmt="grid"))
 
@@ -144,6 +171,8 @@ def main():
         dfs.append(get_benchmark(bench))
 
     full_data = pd.concat(dfs)
+
+    compare_graph(full_data, ['v01', 'v16'], best=True)
 
     time_vs_version(full_data)
     time_vs_version(full_data, "v08")
