@@ -107,27 +107,25 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 
 ## v8: Ajout d'un VP Tree
 
-## v9:
+## v9: VP Tree recherche en itératif
 
-### v9.1: VP Tree recherche en itératif
+## v10: Ne plus inclure le centre dans la liste de noeuds
 
-### v9.2: Ne plus inclure le centre dans la liste de noeuds
+## v11: Ne plus inclure le centre (version récursive)
 
-## v10: Ne plus inclure le centre (version récursive)
+## v12: Séparation de la covariance en produit et somme
 
-## V11:
+## v13: Somme par block pour le kernel de covariance
 
-### v11.1: Séparation de la covariance en produit et somme
+## v14: block add mean sum
 
-### v11.2: Somme par block pour le kernel de covariance
+## v15: Utilisation des warps pour réduire les sommes de blocks (moyenne & covariance)
 
-## v12: block add mean sum
+## v16: Somme par blocks sur les éléments deux à deux (moyenne & covariance)
 
-## v13: Utilisation des warps pour réduire les sommes de blocks (moyenne & covariance)
+## v17: Déroulement de boucle pour les sommes de blocks (moyenne & covariance)
 
-## v14: Somme par blocks sur les éléments deux à deux (moyenne & covariance)
-
-## v15: Déroulement de boucle pour les sommes de blocks (moyenne & covariance)
+## v18: TODO
 
 # Summary
 
