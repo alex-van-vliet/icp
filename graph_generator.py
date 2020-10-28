@@ -59,12 +59,12 @@ def compare(bench):
         print("too many versions")
         return
     version = version[0]
-    comparison = pd.DataFrame(columns=['bench', 'threshold', 'test_id', 'label'])
     if 'threshold' in bench.columns:
         columns = ['test_id', 'threshold']
     else:
         columns = ['test_id']
 
+    comparison = pd.DataFrame(columns=['bench', *columns, 'label'])
     comparison[[*columns, 'label']] = bench[[*columns, 'label']].drop_duplicates()
     cpu_data = bench[bench['type'] == 'BM_CPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_cpu'})
     gpu_data = bench[bench['type'] == 'BM_GPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_gpu'})
@@ -72,7 +72,7 @@ def compare(bench):
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
     with open(f"bench_comparisons/{bench.iloc[0].bench}.md", "w") as file:
-        file.write(comparison.to_markdown(tablefmt="grid"))
+        file.write(comparison.to_markdown(tablefmt="github"))
 
 # %%
 def get_benchmark(bench_path):
