@@ -53,6 +53,35 @@ def time_vs_version(all_benches, min_version=None):
 
     fig.savefig(f"time_vs_version/time_vs_version-{min_version if min_version is not None else 'full'}.png")
 
+def compare_best(bench):
+    if 'threshold' not in bench.columns:
+        print("no theshold")
+        return
+    columns = ['bench', 'type', 'test_id', 'label']
+    best_bench = bench[[*columns, 'real_time']].groupby(by=columns)['real_time'].idxmin()
+    bench = bench.loc[best_bench].reset_index()
+
+    version = bench['bench'].unique()
+    if len(version) != 1:
+        print("too many versions")
+        return
+    version = version[0]
+
+    columns = ['test_id']
+    comparison = pd.DataFrame(columns=['bench', *columns, 'label'])
+    comparison[[*columns, 'label']] = bench[[*columns, 'label']].drop_duplicates()
+    cpu_data = bench[bench['type'] == 'BM_CPU'][[*columns, 'real_time', 'threshold']]
+    cpu_data = cpu_data.rename(columns={'real_time': 'real_time_cpu', 'threshold': 'threshold_cpu'})
+    gpu_data = bench[bench['type'] == 'BM_GPU'][[*columns, 'real_time', 'threshold']]
+    gpu_data = gpu_data.rename(columns={'real_time': 'real_time_gpu', 'threshold': 'threshold_gpu'})
+    comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
+    comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
+    comparison['bench'] = version
+    print(comparison)
+    with open(f"bench_comparisons/{bench.iloc[0].bench}-best.md", "w") as file:
+        file.write(comparison.to_markdown(tablefmt="github"))
+
+
 def compare(bench):
     version = bench['bench'].unique()
     if len(version) != 1:
@@ -96,6 +125,7 @@ def get_benchmark(bench_path):
 
     threshold_vs_time(csv)
     compare(csv)
+    compare_best(csv)
     with open(f"bench_dataframes/{csv.iloc[0].bench}.md", "w") as file:
         file.write(csv.to_markdown(tablefmt="grid"))
 
