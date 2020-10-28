@@ -77,7 +77,6 @@ def compare_best(bench):
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
-    print(comparison)
     with open(f"bench_comparisons/{bench.iloc[0].bench}-best.md", "w") as file:
         file.write(comparison.to_markdown(tablefmt="github"))
 
