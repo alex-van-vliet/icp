@@ -1,88 +1,28 @@
 #include <Eigen/Dense>
 #include <iostream>
-#include <unistd.h>
 
 #include "libcpu/icp.hh"
 #include "libgpu/icp.hh"
-
-/*
-Eigen::Matrix3Xf to_eigen(const libcpu::point_list& point_list)
-{
-    Eigen::Matrix3Xf result(3, point_list.size());
-    for (size_t i = 0; i < point_list.size(); ++i)
-    {
-        result(0, i) = point_list[i].x;
-        result(1, i) = point_list[i].y;
-        result(2, i) = point_list[i].z;
-    }
-
-    return result;
-}
- */
+#include "options.hh"
 
 int main(int argc, char* argv[])
 {
-    if (argc != 3)
+    options::options options;
+    if (!options::parse_options(options, argc - 1, argv + 1))
     {
-        std::cerr << "Usage: " << argv[0]
-                  << " <path/to/data.txt> <path/to/data.txt>" << std::endl;
+        options::show_help(argv[0]);
         return 1;
     }
 
-    srand(static_cast<unsigned>(getpid()));
+    std::cout << "Running on " << (options.gpu ? "GPU" : "CPU") << std::endl;
 
-    auto q = libcpu::read_csv(argv[1], "Points_0", "Points_1", "Points_2");
-    auto p = libcpu::read_csv(argv[2], "Points_0", "Points_1", "Points_2");
-    /*
-        auto q_e = to_eigen(q);
-        std::cout << "Q:" << std::endl;
-        std::cout << q_e << std::endl;
-        auto p_e = to_eigen(p);
-        std::cout << "P:" << std::endl;
-        std::cout << p_e << std::endl;
+    const char* q_path = options.reference;
+    auto q = libcpu::read_csv(q_path, "Points_0", "Points_1", "Points_2");
+    const char* p_path = options.transformed;
+    auto p = libcpu::read_csv(p_path, "Points_0", "Points_1", "Points_2");
 
-        Eigen::Vector3f q_center = q_e.rowwise().mean();
-        std::cout << "Q center:" << std::endl;
-        std::cout << q_center << std::endl;
-        Eigen::Vector3f p_center = p_e.rowwise().mean();
-        std::cout << "P center:" << std::endl;
-        std::cout << p_center << std::endl;
-
-        auto q_centered = q_e.colwise() - q_center;
-        std::cout << "Q centered:" << std::endl;
-        std::cout << q_centered << std::endl;
-        auto p_centered = p_e.colwise() - p_center;
-        std::cout << "P centered:" << std::endl;
-        std::cout << p_centered << std::endl;
-
-        Eigen::Matrix3f covariance = p_centered * q_centered.transpose();
-        std::cout << "Covariance:" << std::endl;
-        std::cout << covariance << std::endl;
-
-        Eigen::JacobiSVD svd(covariance, Eigen::ComputeFullU |
-       Eigen::ComputeFullV);
-
-        auto rotation = (svd.matrixU() * svd.matrixV().transpose()).transpose();
-        std::cout << "Rotation:" << std::endl;
-        std::cout << rotation << std::endl;
-
-        auto new_p_e = rotation * p_e;
-        std::cout << "New P (without translation):" << std::endl;
-        std::cout << new_p_e << std::endl;
-
-        auto diff = new_p_e - q_e;
-        std::cout << "Difference:" << std::endl;
-        std::cout << diff << std::endl;
-
-        auto translation = q_center - rotation * p_center;
-        std::cout << "Translation:" << std::endl;
-        std::cout << translation << std::endl;
-
-        auto res_p_e = new_p_e.colwise() + translation;
-        std::cout << "Result:" << std::endl;
-        std::cout << res_p_e << std::endl;
-    */
-    auto [transform, new_p] = libgpu::icp(q, p, 200, 1e-5, 8);
+    auto [transform, new_p] = options.gpu ? libgpu::icp(q, p, 200, 1e-5, 8)
+                                          : libcpu::icp(q, p, 200, 1e-5, 8);
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)
