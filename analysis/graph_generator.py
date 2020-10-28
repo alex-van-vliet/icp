@@ -1,4 +1,5 @@
 # %%
+import os
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
@@ -6,6 +7,11 @@ from IPython.display import display, HTML
 from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 
+def mkopen(path, *args, **kwargs):
+    if isinstance(path, str):
+        path = Path(path)
+    os.makedirs(path.parent, exist_ok=True)
+    return open(path, *args, **kwargs)
 
 # %%
 def threshold_vs_time(bench):
@@ -22,7 +28,8 @@ def threshold_vs_time(bench):
         ax[i].set_ylabel("time in ms")
         sns.scatterplot(data=data, x="threshold", y="real_time", hue="type", ax=ax[i])
 
-    fig.savefig(f"threshold_graphs/threshold_vs_time_{data.iloc[0].bench}.png")
+    with mkopen(f"results/threshold_graphs/threshold_vs_time_{data.iloc[0].bench}.png", "wb") as file:
+        fig.savefig(file)
 
 # %%
 def time_vs_version(all_benches, min_version=None):
@@ -51,7 +58,8 @@ def time_vs_version(all_benches, min_version=None):
         time_vs_version_specialized(i, test_id, "BM_CPU", min_version)
         time_vs_version_specialized(i, test_id, "BM_GPU", min_version)
 
-    fig.savefig(f"time_vs_version/time_vs_version-{min_version if min_version is not None else 'full'}.png")
+    with mkopen(f"results/time_vs_version/time_vs_version-{min_version if min_version is not None else 'full'}.png", "wb") as file:
+        fig.savefig(file)
 
 def compare_best(bench):
     if 'threshold' not in bench.columns:
@@ -77,7 +85,7 @@ def compare_best(bench):
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
-    with open(f"bench_comparisons/{bench.iloc[0].bench}-best.md", "w") as file:
+    with mkopen(f"results/comparisons/{bench.iloc[0].bench}-best.md", "w") as file:
         file.write(comparison.to_markdown(tablefmt="github"))
 
 
@@ -99,7 +107,7 @@ def compare(bench):
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
-    with open(f"bench_comparisons/{bench.iloc[0].bench}.md", "w") as file:
+    with mkopen(f"results/comparisons/{bench.iloc[0].bench}.md", "w") as file:
         file.write(comparison.to_markdown(tablefmt="github"))
 
 # %%
@@ -125,14 +133,14 @@ def get_benchmark(bench_path):
     threshold_vs_time(csv)
     compare(csv)
     compare_best(csv)
-    with open(f"bench_dataframes/{csv.iloc[0].bench}.md", "w") as file:
+    with mkopen(f"results/dataframes/{csv.iloc[0].bench}.md", "w") as file:
         file.write(csv.to_markdown(tablefmt="grid"))
 
     return csv
 
 # %%
 def main():
-    benchs = Path("benchmarks_logs")
+    benchs = Path("logs")
 
     dfs = []
 
