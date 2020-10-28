@@ -84,6 +84,32 @@ namespace
         return 2;
     }
 
+    int handle_error(options::options& options, int argc, char* argv[])
+    {
+        if (argc <= 1)
+        {
+            std::cerr << "Missing error." << std::endl;
+            return 0;
+        }
+        try
+        {
+            float error = std::stof(argv[1]);
+            if (error >= 0)
+                options.error = error;
+            else
+            {
+                std::cerr << "Invalid error: " << error << std::endl;
+                return false;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Invalid error: " << argv[1] << std::endl;
+            return false;
+        }
+        return 2;
+    }
+
     constexpr available_options available_options[] = {
         {
             .flag = "--device",
@@ -102,6 +128,11 @@ namespace
                 "<iterations>: the maximum number of iterations [default: 200]",
             .callback = handle_iterations,
         },
+        {
+            .flag = "--error",
+            .help = "<error>: the error threshold [default: 1e-5]",
+            .callback = handle_error,
+        },
     };
 
 } // namespace
@@ -115,6 +146,7 @@ namespace options
         options.gpu = true;
         options.capacity = 0;
         options.iterations = 200;
+        options.error = 1e-5;
         if (argc < 2)
             return false;
 

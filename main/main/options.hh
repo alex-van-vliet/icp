@@ -11,6 +11,7 @@ namespace options
         bool gpu;
         uint capacity;
         uint iterations;
+        float error;
     };
 
     int parse_options(options& options, int argc, char* argv[]);
