@@ -36,27 +36,21 @@ def time_vs_version(all_benches, min_version=None):
     fig, axs = plt.subplots(nrows=len(all_benches.test_id.unique()), figsize=(8, 20))
     plt.subplots_adjust(hspace=0.4)
 
-    def time_vs_version_specialized(i, test_id, run_type, min_version=None):
-        handle = [mpatches.Patch(color="red", label="GPU"), mpatches.Patch(color="blue", label="CPU")]
-        axs[i].legend(handles=handle)
-
-        color = "blue" if run_type == "BM_CPU" else "red"
-
-        bench_type = all_benches[(all_benches["type"] == run_type) & (all_benches["test_id"] == test_id)]
+    def time_vs_version_specialized(i, test_id, min_version=None):
+        bench_type = all_benches[all_benches["test_id"] == test_id]
         if min_version is not None:
             bench_type = bench_type[bench_type["bench"] > min_version]
         bench_type = bench_type.groupby(by=['test_id', 'label', 'bench', 'type'], dropna=False).min('real_time')
         bench_type = bench_type.reset_index()
         bench_type = bench_type.sort_values("bench")
 
-        sns.lineplot(data=bench_type, x="bench", y="real_time", ax=axs[i], color=color)
-        axs[i].set_title(f"{run_type[-3:]}: {bench_type.iloc[0].label}")
+        sns.lineplot(data=bench_type, x="bench", y="real_time", hue='type', ax=axs[i])
+        axs[i].set_title(f"{bench_type.iloc[0].label}")
         axs[i].set_xlabel("versions")
         axs[i].set_ylabel("time in ms")
 
     for i, test_id in enumerate(all_benches.test_id.unique()):
-        time_vs_version_specialized(i, test_id, "BM_CPU", min_version)
-        time_vs_version_specialized(i, test_id, "BM_GPU", min_version)
+        time_vs_version_specialized(i, test_id, min_version)
 
     with mkopen(f"results/time_vs_version/time_vs_version-{min_version if min_version is not None else 'full'}.png", "wb") as file:
         fig.savefig(file)
@@ -140,6 +134,8 @@ def get_benchmark(bench_path):
 
 # %%
 def main():
+    sns.set_theme()
+
     benchs = Path("logs")
 
     dfs = []
