@@ -41,12 +41,12 @@ def time_vs_version(all_benches, min_version=None):
         axs[i].legend(handles=handle)
 
         color = "blue" if run_type == "BM_CPU" else "red"
-        threshold = 32 if run_type == "BM_CPU" else 256
 
         bench_type = all_benches[(all_benches["type"] == run_type) & (all_benches["test_id"] == test_id)]
         if min_version is not None:
             bench_type = bench_type[bench_type["bench"] > min_version]
-        bench_type = bench_type[(bench_type.threshold.isna()) | (bench_type.threshold == str(threshold))]
+        bench_type = bench_type.groupby(by=['test_id', 'label', 'bench', 'type'], dropna=False).min('real_time')
+        bench_type = bench_type.reset_index()
         bench_type = bench_type.sort_values("bench")
 
         sns.lineplot(data=bench_type, x="bench", y="real_time", ax=axs[i], color=color)
