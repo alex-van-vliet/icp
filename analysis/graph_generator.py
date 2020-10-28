@@ -13,6 +13,13 @@ def mkopen(path, *args, **kwargs):
     os.makedirs(path.parent, exist_ok=True)
     return open(path, *args, **kwargs)
 
+def get_figsize(x_cm, y_cm=None, nb_x=1, nb_y=1):
+    x_inches = x_cm * 10 / 25.4
+    y_inches = y_cm * 10 / 25.4 if y_cm else x_inches / 1920 * 1080
+    x_inches *= nb_x
+    y_inches *= nb_y
+    return {'figsize': (x_inches,y_inches)}
+
 # %%
 def threshold_vs_time(bench):
     if "threshold" not in bench.columns:
@@ -105,7 +112,7 @@ def compare(bench):
         file.write(comparison.to_markdown(tablefmt="github"))
 
 def compare_graph(all_benches, versions=None, best=False):
-    fig, ax = plt.subplots(figsize=(12, 30), nrows=1, ncols=1)
+    fig, ax = plt.subplots(**get_figsize(50), nrows=1, ncols=1)
     if not versions:
         versions = all_benches['bench'].unique()
     benches = all_benches[all_benches['bench'].isin(versions)].copy()
