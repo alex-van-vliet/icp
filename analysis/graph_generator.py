@@ -181,7 +181,14 @@ def main():
 
     full_data = pd.concat(dfs)
 
+    versions = sorted(full_data['bench'].unique())
+
     compare_graph(full_data, ['v01', 'v16'], best=True)
+    compare_graph(full_data, ['v08', 'v09', 'v10', 'v11'], best=True)
+    compare_graph(full_data, [f"v{i}" for i in range(12, 19)], best=True)
+
+    for p, n in zip(versions[:-1], versions[1:]):
+        compare_graph(full_data, [p, n], best=True)
 
     time_vs_version(full_data)
     time_vs_version(full_data, "v08")
