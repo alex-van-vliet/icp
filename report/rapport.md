@@ -72,7 +72,7 @@ a permis de tester si nos dernières améliorations impactaient la performance d
 
 Source: https://github.com/jonhoo/inferno
 
-Cet outils de profiling nous a permis de voir sur l'implémentation GPU, les fonctions qui prenaient le plus de temps pour avoir des informations
+Cet outils de profiling nous a permis de voir sur l'implémentation CPU, les fonctions qui prenaient le plus de temps pour avoir des informations
 sur les fonctions a optimiser.
 
 
