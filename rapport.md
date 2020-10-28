@@ -15,6 +15,7 @@ author:
 L'algorithme de l'ICP (Iterative closest point) permet de minimiser la distance entre le nuage de point d'un objet dans deux position différentes.
 
 Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins d'étape en fonction du résultat rechérché. Voici les étapes de l'algorithme que nous avons choisi :
+
 - détection des points les plus proches dans les deux nuages de points
 - calcul de la matrice de transformation pour passer des points les plus proches aux autres
 - application de la matrice au premier nuage
@@ -22,24 +23,22 @@ Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins d'é
 Ces étapes sont reproduites tant que l'erreur n'est pas suffisament faible, c'est à dire tant que les deux nuages de points ne sont pas superposés.
 
 
-# CPU implementation
-
-Quick description
+# Implémentation CPU
 
 Source : http://www.sci.utah.edu/~shireen/pdfs/tutorials/Elhabian_ICP09.pdf
 
-Parallelized closest point finding and centering the cloud of points
+Parties parallélisée :
+
+- recherche du point le plus proche
+- recentrer le nuage de points
 
 
-# GPU implementation
+# Implementation GPU
 
-Quick description of the GPU baseline
+Perfs: Plus lent que le CPU
+Utilisation de ManagedMemory partout pour ne pas avoir a se préoccuper des accès entre CPU et GPU
 
-Perfs: slower than CPU
-Everything in ManagedMemory
-
-
-# Performance indicators
+# Indicateurs de performance
 
 ## Google Test
 
@@ -59,50 +58,48 @@ Source: https://github.com/jonhoo/inferno
 
 Source: https://docs.nvidia.com/cuda/profiler-users-guide/index.html
 
-# Performance bottlenecks
+# Bottlenecks
 
 ## Matching the closest point
 
 # GPU improvement
 
-## v2: stop using ManagedMemory
+## v2: Ne plus utiliser de ManagedMemory
 
-## v3: parallelize mean
+## v3: Parallélisation  de la moyenne
 
-## v4: parallelize covariance kernel
+## v4: Parallélisation du kernel de covariance
 
-## v5: parallelize apply alignment kernel
+## v5: Parallélisation du kernel apply alignment
 
-## v6: parallelize compute error kernel
+## v6: Parallélisation du kernel compute error
 
-## v7: use column ordering
+## v7: Matrices en column-major order
 
-## v8: add vp trees
+## v8: Ajout d'un VP Tree
 
 ## v9:
 
-### v9.1: search vtree in iterative
+### v9.1: VP Tree recherche en itératif
 
-### v9.2: remove center from points in iterative
+### v9.2: Ne plus inclure le centre dans la liste de noeuds
 
-## v10: remove center from points in recursive
+## v10: Ne plus inclure le centre (version récursive)
 
 ## V11:
 
-### v11.1: split covariance into product and sum
+### v11.1: Séparation de la covariance en produit et somme
 
-### v11.2: block add covariance kernel
+### v11.2: Somme par block pour le kernel de covariance
 
 ## v12: block add mean sum
 
-## v13: use all warps to reduce block sums (mean & covariance)
+## v13: Utilisation des warps pour réduire les sommes de blocks (moyenne & covariance)
 
-## v14: load two elements directly in block sums (mean & covariance)
+## v14: Somme par blocks sur les éléments deux à deux (moyenne & covariance)
 
-## v15: unroll loop in block sums (mean & covariance)
+## v15: Déroulement de boucle pour les sommes de blocks (moyenne & covariance)
 
 # Summary
 
-summary avec le benchmark
-
-Pair programming during the whole project development.
+Pair programming durant tout le projet.
