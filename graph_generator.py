@@ -20,7 +20,7 @@ def threshold_vs_time(bench):
         ax[i].set_title(data.iloc[0].label)
         ax[i].set_xlabel("VPTree threshold")
         ax[i].set_ylabel("time in ms")
-        sns.scatterplot(data=data, x="threshold", y="cpu_time", hue="type", ax=ax[i])
+        sns.scatterplot(data=data, x="threshold", y="real_time", hue="type", ax=ax[i])
 
     fig.savefig(f"threshold_graphs/threshold_vs_time_{data.iloc[0].bench}.png")
 
@@ -42,7 +42,7 @@ def time_vs_version(all_benches, min_version=None):
         bench_type = bench_type[(bench_type.threshold.isna()) | (bench_type.threshold == str(threshold))]
         bench_type = bench_type.sort_values("bench")
 
-        sns.lineplot(data=bench_type, x="bench", y="cpu_time", ax=axs[i], color=color)
+        sns.lineplot(data=bench_type, x="bench", y="real_time", ax=axs[i], color=color)
         axs[i].set_title(f"{run_type[-3:]}: {bench_type.iloc[0].label}")
         axs[i].set_xlabel("versions")
         axs[i].set_ylabel("time in ms")
@@ -66,8 +66,8 @@ def compare(bench):
 
     comparison = pd.DataFrame(columns=['bench', *columns, 'label'])
     comparison[[*columns, 'label']] = bench[[*columns, 'label']].drop_duplicates()
-    cpu_data = bench[bench['type'] == 'BM_CPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_cpu'})
-    gpu_data = bench[bench['type'] == 'BM_GPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_gpu'})
+    cpu_data = bench[bench['type'] == 'BM_CPU'][[*columns, 'real_time']].rename(columns={'real_time': 'real_time_cpu'})
+    gpu_data = bench[bench['type'] == 'BM_GPU'][[*columns, 'real_time']].rename(columns={'real_time': 'real_time_gpu'})
     comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
     comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
     comparison['bench'] = version
@@ -86,10 +86,10 @@ def get_benchmark(bench_path):
 
     if len(tmp.columns) == 3:
         csv[["type", "test_id", "useless"]] = tmp
-        csv = csv[["bench", "type", "test_id", "cpu_time", "label"]]
+        csv = csv[["bench", "type", "test_id", "real_time", "label"]]
     elif len(tmp.columns) == 4:
         csv[["type", "threshold", "test_id", "useless"]] = tmp
-        csv = csv[["bench", "type", "threshold", "test_id", "cpu_time", "label"]]
+        csv = csv[["bench", "type", "threshold", "test_id", "real_time", "label"]]
     else:
         import pdb; pdb.set_trace()
         print(f"Unhandled case: {bench_path.name}")
