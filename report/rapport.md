@@ -42,6 +42,8 @@ Malheureusement, ce n'était pas si facile. Après ce changement, la vitesse ét
 
 Nous avons donc conclus qu'effectivement la mémoire managée était une mauvaise idée puisqu'il n'était vraiment pas nécessaire d'avoir les informations sur GPU et CPU en même temps.
 
+Nous avons aussi parallélisé les kernels qui se paralléliseaient de manière simple comme le centrage des points.
+
 ## Performances
 
 ![Performances v01](v01.png "Performances V01")
@@ -100,9 +102,9 @@ Notre méthodologie était la suivante. Dès que nous avons eu notre première v
 2. Recherche de comment améliorer la partie choisie: en utilisant l'analyse fine du kernel.
 3. Implémentation de l'amélioration.
 
-# Bottlenecks
+### Bottlenecks
 
-## Matching the closest point
+Les bottlenecks ont donc été déterminés au fur et à mesure des améliorations. Au départ, les plus gros bottlenecks étaient le calcul des points les plus proches ainsi que le calcul de la covariance. A la fin, les plus gros bottlenecks sont la transmission de données et toujours le calcul des points les plus proches.
 
 # Améliorations
 
