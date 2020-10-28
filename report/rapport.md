@@ -4,6 +4,7 @@ author:
 - Alex van Vliet
 - Théophane Vié
 - Paul Khuat-Duy
+titlepage: true
 ...
 
 \newpage
