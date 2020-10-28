@@ -205,6 +205,9 @@ La machine utilisée pour nos différents tests durant ce projet est :
 
 # Conclusion
 
-# TODO: écrire la conclusion
+Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de donnés disponibles, c'est à dire les tests sur `horse`.
+
+TODO: continuer le disclaimer sur le fait qu'on puisse perdre en perfs sur les exemples simples,
+mais j'ai plus d'idées
 
 Nous avons travaillé en pair programming durant tout le projet.
