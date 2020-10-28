@@ -5,4 +5,4 @@ pdf:
 	pandoc $(pdf_src).md --standalone --toc --toc-depth 2 -f markdown --filter pandoc-include -o $(pdf_dest).pdf
 
 watch:
-	(while inotifywait -e close_write rapport.md; do make; done)
+	(while inotifywait -e close_write *.md *.png; do make; done)
