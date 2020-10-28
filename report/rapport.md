@@ -108,9 +108,26 @@ Les bottlenecks ont donc été déterminés au fur et à mesure des amélioratio
 
 # Améliorations
 
-## v2: Parallélisation du closest point
+## v2: Parallélisation du closest kernel
+
+Puisque la recherche du point le plus proche est l'opération qui prend le plus de temps, nous avons décidé de commencer par la paralléliser.
+
+TODO: add nvvprof
+
+Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleurs que sur CPU.
+
+TODO: add graphe
+
 
 ## v3: Parallélisation  de la moyenne
+
+TODO: check si nvvprof conseillait de l'opti
+
+Nous sommes ensuite passés a des fonctions facilement parallélisables, nous nous sommes ici occupé du calcul du point moyen du nuage de point.
+Pour éviter d'overflow, nous avons choisi de d'abord paralléliser une opération de division sur tous les points, puis de faire la somme de ces
+résultats.
+
+TODO: add graphe
 
 ## v4: Parallélisation du kernel de covariance
 
