@@ -53,6 +53,27 @@ def time_vs_version(all_benches, min_version=None):
 
     fig.savefig(f"time_vs_version/time_vs_version-{min_version if min_version is not None else 'full'}.png")
 
+def compare(bench):
+    version = bench['bench'].unique()
+    if len(version) != 1:
+        print("too many versions")
+        return
+    version = version[0]
+    comparison = pd.DataFrame(columns=['bench', 'threshold', 'test_id', 'label'])
+    if 'threshold' in bench.columns:
+        columns = ['test_id', 'threshold']
+    else:
+        columns = ['test_id']
+
+    comparison[[*columns, 'label']] = bench[[*columns, 'label']].drop_duplicates()
+    cpu_data = bench[bench['type'] == 'BM_CPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_cpu'})
+    gpu_data = bench[bench['type'] == 'BM_GPU'][[*columns, 'cpu_time']].rename(columns={'cpu_time': 'cpu_time_gpu'})
+    comparison = pd.merge(comparison, cpu_data, left_on=columns, right_on=columns, how='outer')
+    comparison = pd.merge(comparison, gpu_data, left_on=columns, right_on=columns, how='outer')
+    comparison['bench'] = version
+    with open(f"bench_comparisons/{bench.iloc[0].bench}.md", "w") as file:
+        file.write(comparison.to_markdown(tablefmt="grid"))
+
 # %%
 def get_benchmark(bench_path):
     csv = pd.read_csv(bench_path)
@@ -74,6 +95,7 @@ def get_benchmark(bench_path):
         print(f"Unhandled case: {bench_path.name}")
 
     threshold_vs_time(csv)
+    compare(csv)
     with open(f"bench_dataframes/{csv.iloc[0].bench}.md", "w") as file:
         file.write(csv.to_markdown(tablefmt="grid"))
 
