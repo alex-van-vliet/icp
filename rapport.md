@@ -6,6 +6,7 @@ author:
 - Paul Khuat-Duy
 ...
 
+\newpage
 
 # Introduction
 
@@ -25,7 +26,7 @@ Ces étapes sont reproduites tant que l'erreur n'est pas suffisament faible, c'e
 
 Quick description
 
-Source : MATLAB paper
+Source : http://www.sci.utah.edu/~shireen/pdfs/tutorials/Elhabian_ICP09.pdf
 
 Parallelized closest point finding and centering the cloud of points
 
