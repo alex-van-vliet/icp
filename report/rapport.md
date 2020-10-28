@@ -45,19 +45,36 @@ Utilisation de ManagedMemory partout pour ne pas avoir a se préoccuper des acc�
 
 Source: https://github.com/google/googletest
 
+Google Test est un framework de tests C++, celui-ci nous a permis de vérifier durant tout le développement de la version CPU que nos fonctions
+renvoyaient des résultats cohérents et d'éviter les régressions lors de nos phases de refactos.
+
 
 ## Google Benchmark
 
 Source: https://github.com/google/benchmark
 
+Google Benchmark est l'outil de benchmarking qui a été utilisé pour réaliser tous les benchmarks présents dans ce rapport. Ce framework nous
+a permis de tester si nos dernières améliorations impactaient la performance de notre programme autant sur la partie CPU que la partie GPU.
 
-## Flame graph
+
+## Flamegraph
 
 Source: https://github.com/jonhoo/inferno
+
+Cet outils de profiling nous a permis de voir sur l'implémentation GPU, les fonctions qui prenaient le plus de temps pour avoir des informations
+sur les fonctions a optimiser.
+
 
 ## nvprof
 
 Source: https://docs.nvidia.com/cuda/profiler-users-guide/index.html
+
+Comme flamegraph, cet outils est un profiler mais cette fois-ci pour GPU. De la même façon que flamegraph, il nous permettait de voir le temps
+que l'on passait dans chaque fonction mais il nous apportait des informations supplémentaire comme :
+
+- la liste des kernels à optimiser avec un score
+- rapport auto-généré sur l'utilisation du GPU pour améliorer nos performances
+
 
 # Bottlenecks
 
