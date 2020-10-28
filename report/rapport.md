@@ -173,7 +173,21 @@ On remarque bien une accélération, d'abord très conséquente, puis plus petit
 
 ## Optimisation de la capacité
 
-# TODO
+Après l'implémentation du VP Tree, nous avions choisi arbitrairement une capacité de 8 pour celui-ci,
+cela veut dire que lorsque l'on essayait de créer un noeud avec moins de 8 éléments il étaient tous
+stockés dans une liste de points.
+
+Le choix de cette capacité impacte l'arbre résultant, si la capacité choisie est faible, l'arbre
+sera plus profond et il y aura plus de noeuds. Au contraire, si cette capacité est élevée, l'arbre
+aura une depth très faible voire une depth de 1 si le nombre de points est inférieur à la capacité,
+dans ce cas là, notre structure de donnée ne nous apporte plus aucun avantage comparé à notre première
+version avec une recherche dans un vecteur.
+
+Nous avons donc fait des benchmarks pour trouver la capacité nous permettant d'avoir les meilleurs
+résultats sur nos différents jeux de tests.
+
+TODO: analyse des résultats + inclure les graphes
+
 
 # Benchmark
 
