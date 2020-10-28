@@ -65,23 +65,41 @@ Source: https://docs.nvidia.com/cuda/profiler-users-guide/index.html
 
 # GPU improvement
 
-## Closest points
+## v2: stop using ManagedMemory
 
-Parallelized
+## v3: parallelize mean
 
-## Mean
+## v4: parallelize covariance kernel
 
-Parallelize the division
+## v5: parallelize apply alignment kernel
 
-Parallelize the sum
+## v6: parallelize compute error kernel
 
-## Closest points
+## v7: use column ordering
 
-Still function that takes the most time in the benchmarks
+## v8: add vp trees
 
-parallisation
+## v9:
 
-ce qu'on doit encore faire -> closest point
+### v9.1: search vtree in iterative
+
+### v9.2: remove center from points in iterative
+
+## v10: remove center from points in recursive
+
+## V11:
+
+### v11.1: split covariance into product and sum
+
+### v11.2: block add covariance kernel
+
+## v12: block add mean sum
+
+## v13: use all warps to reduce block sums (mean & covariance)
+
+## v14: load two elements directly in block sums (mean & covariance)
+
+## v15: unroll loop in block sums (mean & covariance)
 
 # Summary
 
