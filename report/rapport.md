@@ -27,7 +27,7 @@ Ces étapes sont reproduites tant que l'erreur n'est pas suffisament faible, c'e
 
 ## CPU
 
-Notre première implémentation CPU est très simple: c'est une traduction en C++ de l'explication précédente en utilisant un `std::vector` de `Point3D` pour représenter les nuages de points et une classe `Matrix` pour la matrice de transformation. La SVD est faite avec `Eigen`, une bibliothèque d'algèbre linéaire en C++. Une fois cette version basique fonctionnelle, nous avons parallélisé le calcul du point le plus proche, en lançant les recherches sur plusieurs threads, et le centrage des nuages de points en utilisant OpenMP. Une petite amélioration algorithmique a aussi été ajoutée: il suffit de centrer le nuage de points d'arrivée une seule fois puisqu'il ne change pas.
+Notre première implémentation CPU est très simple : c'est une traduction en C++ de l'explication précédente en utilisant un `std::vector` de `Point3D` pour représenter les nuages de points et une classe `Matrix` pour la matrice de transformation. La SVD est faite avec `Eigen`, une bibliothèque d'algèbre linéaire en C++. Une fois cette version basique fonctionnelle, nous avons parallélisé le calcul du point le plus proche, et le centrage des nuages de points en lançant les recherches sur plusieurs threads avec OpenMP. Une petite amélioration algorithmique a aussi été ajoutée : il suffit de centrer le nuage de points d'arrivée une seule fois puisqu'il ne change pas.
 
 Source : http://www.sci.utah.edu/~shireen/pdfs/tutorials/Elhabian_ICP09.pdf https://github.com/niosus/notebooks/blob/master/icp.ipynb https://www.youtube.com/watch?v=QWDM4cFdKrE
 
@@ -69,7 +69,7 @@ Source: https://github.com/google/benchmark
 Google Benchmark est l'outil de benchmarking qui a été utilisé pour réaliser tous les benchmarks présents dans ce rapport. Ce framework nous
 a permis de tester si nos dernières améliorations impactaient la performance de notre programme autant sur la partie CPU que la partie GPU.
 
-Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple, le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU, tandis que le temps d'exécution des kernels aussi puisqu'il ne prendrait pas en compte le temps d'échange des données.
+Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple, le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU. Le problème serait le même avec le temps d'exécution des kernels puisqu'il ne prendrait pas en compte le temps d'échange des données.
 Afin de stabiliser aussi les résultats, plusieurs itérations sont effectuées et on analyse la moyenne des temps d'exécutions.
 
 
@@ -97,12 +97,12 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 
 ## Méthodologie
 
-Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé le flamegraph (surtout au début) et nvvprof afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif:
+Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé flamegraph (surtout au début) et nvvprof afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif :
 
 1. Choix d'une partie à améliorer: en utilisant la durée d'exécution de chaque kernel ainsi que la liste des kernels à optimiser fournie par nvvprof.
 2. Recherche de comment améliorer la partie choisie: en utilisant l'analyse fine du kernel.
 3. Implémentation de l'amélioration.
-
+4. Benchmark de la nouvelle méthode
 ### Bottlenecks
 
 Les bottlenecks ont donc été déterminés au fur et à mesure des améliorations. Au départ, les plus gros bottlenecks étaient le calcul des points les plus proches ainsi que le calcul de la covariance. A la fin, les plus gros bottlenecks sont la transmission de données et toujours le calcul des points les plus proches.
@@ -152,7 +152,7 @@ La construction du vp-tree est assez simple mais pose deux questions: comment ch
 
 La recherche est fondamentalement récursive. Disons qu'on recherche le point le plus proche au point `Q`. On calcule `dist(Q, centre)` et on descend dans le fils "intérieur" (respectivement "extérieur") si la distance est plus petite (respectivement plus grande ou égale) au rayon. A la remontée, on a donc trouvé un point `N` le plus proche. Si `dist(Q, N) < |rayon - dist(Q, centre)|`, c'est-à-dire que la distance entre le point recherché et le point trouvé est inférieure à la distance entre le point recherché et le bord de la sphère, alors on a effectivement trouvé le point le plus proche. Sinon il faut aussi descendre dans l'autre fils et renvoyer le fils le plus proche entre les deux descentes.
 
-Notre première implémentation, récursive, augmentait bien radicalement les performances, mais le closest point restait le ralentisement principal. Nous avons donc essayé 4 versions différentes:
+Notre première implémentation, récursive, augmentait radicalement les performances, mais le closest point restait le ralentisement principal. Nous avons donc essayé 4 versions différentes :
 
 - récursive (v8),
 - itérative (v9),
@@ -161,11 +161,11 @@ Notre première implémentation, récursive, augmentait bien radicalement les pe
 
 ![Performances v08 à v11](v08-v09-v10-v11-best.png "Performances v08 à v11")
 
-On remarque sur le graphique qu'en général la v10 est soit au alentours de la meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous avons choisi.
+On remarque sur le graphique qu'en général la v10 est soit aux alentours de la meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous avons choisi.
 
 ## Optimisation des sommes-réductions (v12 à v18)
 
-Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommende d'améliorer d'autres kernels: les sommes qui sont des réductions. Ce sont donc: le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommendation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia (https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf). La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
+Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommende d'améliorer d'autres kernels: les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommendation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia (https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf). La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
 
 ![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
 
