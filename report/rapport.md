@@ -44,7 +44,7 @@ Nous avons donc conclus qu'effectivement la mémoire managée était une mauvais
 
 ## Performances
 
-![](v01.png "test")
+![Performances v01](v01.png "Performances V01")
 
 !include v01.md
 
@@ -76,16 +76,27 @@ Cet outils de profiling nous a permis de voir sur l'implémentation CPU, les fon
 sur les fonctions a optimiser.
 
 
-## nvprof
+## NVidia Visual Profiler
 
 Source: https://docs.nvidia.com/cuda/profiler-users-guide/index.html
 
-Comme flamegraph, cet outils est un profiler mais cette fois-ci pour GPU. De la même façon que flamegraph, il nous permettait de voir le temps
+Comme flamegraph, cet outil est un profiler mais cette fois-ci pour GPU. De la même façon que flamegraph, il nous permettait de voir le temps
 que l'on passait dans chaque fonction mais il nous apportait des informations supplémentaire comme :
 
 - la liste des kernels à optimiser avec un score
-- rapport auto-généré sur l'utilisation du GPU pour améliorer nos performances
+- une analyse fine de chaque kernel avec des informations comme:
+	- le taux d'utilisation de chaque streaming multiprocessor,
+	- le taux d'occupation, c'est-à-dire le ratio entre le nombre de warps actifs et le nombre maximum de warps supportés par chaque multiprocessor,
+	- ce qui fait ralentir le kernel (dépendances mémoires, synchronisation, dépendances d'instructions...),
+	- ...
 
+## Méthodologie
+
+Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé le flamegraph (surtout au début) et nvvprof afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif:
+
+1. Choix d'une partie à améliorer: en utilisant la durée d'exécution de chaque kernel ainsi que la liste des kernels à optimiser fournie par nvvprof.
+2. Recherche de comment améliorer la partie choisie: en utilisant l'analyse fine du kernel.
+3. Implémentation de l'amélioration.
 
 # Bottlenecks
 
