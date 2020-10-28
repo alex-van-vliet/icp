@@ -70,6 +70,7 @@ Google Benchmark est l'outil de benchmarking qui a été utilisé pour réaliser
 a permis de tester si nos dernières améliorations impactaient la performance de notre programme autant sur la partie CPU que la partie GPU.
 
 Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple, le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU, tandis que le temps d'exécution des kernels aussi puisqu'il ne prendrait pas en compte le temps d'échange des données.
+Afin de stabiliser aussi les résultats, plusieurs itérations sont effectuées et on analyse la moyenne des temps d'exécutions.
 
 
 ## Flamegraph
@@ -108,34 +109,40 @@ Les bottlenecks ont donc été déterminés au fur et à mesure des amélioratio
 
 # Améliorations
 
-## v2: Parallélisation du closest kernel
+## Parallélisation du closest point (v2)
 
-Puisque la recherche du point le plus proche est l'opération qui prend le plus de temps, nous avons décidé de commencer par la paralléliser.
+Puisque la recherche du point le plus proche est l'opération qui prend le plus de temps, nous avons décidé de commencer par la paralléliser, c'est-à-dire de lancer toutes les recherches en même temps.
 
-TODO: add nvvprof
-
-Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleurs que sur CPU.
-
-TODO: add graphe
-
-
-## v3: Parallélisation  de la moyenne
-
-TODO: check si nvvprof conseillait de l'opti
-
-Nous sommes ensuite passés a des fonctions facilement parallélisables, nous nous sommes ici occupé du calcul du point moyen du nuage de point.
-Pour éviter d'overflow, nous avons choisi de d'abord paralléliser une opération de division sur tous les points, puis de faire la somme de ces
-résultats.
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v01     | line_translated_2_3_4 -> line_ref |      0.00543135 |        0.244931 |
+| v02     | line_translated_2_3_4 -> line_ref |      0.00645633 |        0.226685 |
+| v01     | cow_tr1 -> cow_ref                |      1.70033    |     1191.24     |
+| v02     | cow_tr1 -> cow_ref                |      1.9773     |        8.00392  |
+| v01     | cow_tr2 -> cow_ref                |     14.7012     |    13083        |
+| v02     | cow_tr2 -> cow_ref                |     14.8243     |       74.2754   |
+| v01     | horse_tr1 -> horse_ref            |   5824.46       |      nan        |
+| v02     | horse_tr1 -> horse_ref            |   5545.64       |     2327.36     |
+| v01     | horse_tr2 -> horse_ref            |   5187.26       |      nan        |
+| v02     | horse_tr2 -> horse_ref            |   5227.36       |     2182.67     |
 
 TODO: add graphe
 
-## v4: Parallélisation du kernel de covariance
+Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleures que sur CPU.
 
-## v5: Parallélisation du kernel apply alignment
+## Parallélisation des données non-dépendantes (v3 à v6)
 
-## v6: Parallélisation du kernel compute error
+Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance: on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
 
-## v7: Matrices en column-major order
+TODO: add graphe
+
+## Matrices en column-major order (v7)
+
+Après avoir fait quelques améliorations, nous nous sommes demandés ce que ferait le passage de la matrice des points en column-major, puisqu'il est fréquent pour les bibliothèque GPU d'utiliser ce mode de stockage.
+
+![Performances v06 à v07](v06-v07-best.png "Performances v06 à v07")
+
+Malheureusement, comme on peut le voir sur le graphique, cela n'apporta pas d'amélioration. La raison étant probablement qu'il aurait fallu repenser tous nos algorithmes.
 
 ## Ajout d'un VP Tree (v8 à v11)
 
@@ -164,7 +171,16 @@ Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous r
 
 On remarque bien une accélération, d'abord très conséquente, puis plus petite, du temps d'exécution. Il est aussi étonnant de voir que la v12 est plus rapide sur CPU que sur GPU, mais cela s'inverse dès la v13.
 
+## Optimisation de la capacité
 
-# Summary
+# TODO
 
-Pair programming durant tout le projet.
+# Benchmark 
+
+# TODO: ajouter les benchmarks globaux
+
+# Conclusion
+
+# TODO: écrire la conclusion
+
+Nous avons travaillé en pair programming durant tout le projet.
