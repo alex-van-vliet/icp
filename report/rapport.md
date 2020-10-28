@@ -175,7 +175,17 @@ On remarque bien une accélération, d'abord très conséquente, puis plus petit
 
 # TODO
 
-# Benchmark 
+# Benchmark
+
+## Machine utilisée
+
+La machine utilisée pour nos différents tests durant ce projet est :
+
+ * CPU: Intel i7-9700K (8) @ 4.900GHz
+ * GPU: NVIDIA GeForce GTX 1660 SUPER
+ * Memory: 32050MiB
+ * OS: Manjaro Linux x86_64
+
 
 # TODO: ajouter les benchmarks globaux
 
