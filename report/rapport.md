@@ -91,7 +91,7 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 
 ## Matching the closest point
 
-# GPU improvement
+# Améliorations
 
 ## v2: Ne plus utiliser de ManagedMemory
 
