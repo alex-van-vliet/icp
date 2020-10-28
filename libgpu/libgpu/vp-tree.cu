@@ -59,8 +59,10 @@ namespace libgpu
     {
         GPUVPTreeNode* node = reinterpret_cast<GPUVPTreeNode*>(pointer);
 
+        // If the node doesn't have children
         if (!tree.inside)
         {
+            // Send its points to GPU
             GPUVPTreeNode helper;
             helper.points = reinterpret_cast<float*>(node + 1);
             helper.nb_points = tree.points.size();
@@ -82,13 +84,16 @@ namespace libgpu
             helper.center_z = tree.center.z;
             helper.radius = tree.radius;
 
+            // Send its inside child to gpu
             helper.inside = node + 1;
             char* outside =
                 from_cpu(reinterpret_cast<char*>(helper.inside), *tree.inside);
 
+            // Send its outside child to gpu
             helper.outside = reinterpret_cast<GPUVPTreeNode*>(outside);
             char* next = from_cpu(outside, *tree.outside);
 
+            // Send itself to gpu
             cudaMemcpy(pointer, &helper, sizeof(GPUVPTreeNode),
                        cudaMemcpyHostToDevice);
 
@@ -132,6 +137,7 @@ namespace libgpu
     __device__ GPUVPTree::GPUVPTreeSearchResult
     search_points(GPUVPTree::GPUVPTreeNode* node, const float* query)
     {
+        // Search the closest points linearly
         uint nb_points = node->nb_points;
         float* points = node->points;
 
@@ -160,6 +166,7 @@ namespace libgpu
     __device__ void prefix(const float* query, StackFrame stack[16],
                            uint& stack_size, GPUVPTree::GPUVPTreeNode* node)
     {
+        // Go as far as possible down the tree
         while (!node->points)
         {
             float d = distance(query, &node->center_x);
@@ -174,18 +181,22 @@ namespace libgpu
     __device__ auto GPUVPTree::search(const float* query)
         -> GPUVPTreeSearchResult
     {
+        // Simulate the stack
         StackFrame stack[16];
         uint stack_size = 0;
 
+        // First insertion
         prefix(query, stack, stack_size,
                reinterpret_cast<GPUVPTreeNode*>(pointer));
 
+        // While the stack is not empty
         while (stack_size > 0)
         {
             StackFrame* next_frame = stack + stack_size;
             StackFrame* frame = next_frame - 1;
             GPUVPTreeNode* node = frame->node;
 
+            // If we have visited the current node once
             if (frame->state == State::INFIX)
             {
                 float d = frame->d;
@@ -207,6 +218,7 @@ namespace libgpu
                     frame->state = State::SUFFIX;
                 }
             }
+            // If we have visited the current node twice
             else if (frame->state == State::SUFFIX)
             {
                 if (next_frame->result.distance < frame->result.distance)

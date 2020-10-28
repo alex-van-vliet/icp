@@ -82,16 +82,6 @@ namespace libgpu
         diffs(i, 0) = dist;
     }
 
-    __global__ void compute_error_reduce_kernel(GPUMatrix diffs, float* error_d)
-    {
-        float error = 0;
-
-        for (size_t i = 0; i < diffs.rows; ++i)
-            error += diffs(i, 0);
-
-        *error_d = error;
-    }
-
     float compute_error(const GPUMatrix& m, const GPUMatrix& p,
                         const GPUMatrix& mu_m)
     {

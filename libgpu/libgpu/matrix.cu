@@ -335,10 +335,11 @@ namespace libgpu
             return;
 
         size_t closest_i = 0;
-        float closest_dist = GPUMatrix::distance(from, row, to, closest_i);
+        float closest_dist =
+            GPUMatrix::squared_distance(from, row, to, closest_i);
         for (size_t j = 1; j < to.rows; ++j)
         {
-            float dist = GPUMatrix::distance(from, row, to, j);
+            float dist = GPUMatrix::squared_distance(from, row, to, j);
             if (dist < closest_dist)
             {
                 closest_i = j;
