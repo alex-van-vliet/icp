@@ -120,7 +120,8 @@ Puisque la recherche du point le plus proche est l'opération qui prend le plus 
 | v01     | horse_tr2 -> horse_ref            |   5187.26       |      nan        |
 | v02     | horse_tr2 -> horse_ref            |   5227.36       |     2182.67     |
 
-TODO: add graphe
+
+![Performances v01 à v02](v01-v02-best.png "Performances v02 à v02")
 
 Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleures que sur CPU.
 
