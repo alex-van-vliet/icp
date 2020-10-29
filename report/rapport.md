@@ -33,6 +33,8 @@ Notre première implémentation CPU est très simple : c'est une traduction en C
 
 Sources : \cite{ICPUtah}, \cite{ICPNotebook} and \cite{ICPYouTube}
 
+\newpage
+
 ## GPU
 
 Pour la première implémentation GPU, plutôt que de tout réécrire directement, nous avons d'abord essayé une version avec de la mémoire managée (c'est-à-dire partagée entre le CPU et le GPU). L'idée était simple : afin de ne pas réécrire tout le code, il suffisait de changer les allocations et la mémoire managée faisait le reste. Nous pourrions ensuite analyser les performances et passer sur GPU les parties problématiques.
@@ -48,8 +50,6 @@ Nous avons aussi parallélisé les kernels qui se parallélisaient de manière s
 
 ## Performances
 
-![Performances v01](v01.png "Performances V01")
-
 | bench   | label                             |   real_time_cpu |   real_time_gpu |
 |---------|-----------------------------------|-----------------|-----------------|
 | v01     | line_translated_2_3_4 -> line_ref |      0.00543135 |        0.244931 |
@@ -57,6 +57,8 @@ Nous avons aussi parallélisé les kernels qui se parallélisaient de manière s
 | v01     | cow_tr2 -> cow_ref                |     14.7012     |    13083        |
 | v01     | horse_tr1 -> horse_ref            |   5824.46       |      nan        |
 | v01     | horse_tr2 -> horse_ref            |   5187.26       |      nan        |
+
+![Performances v01](v01.png "Performances V01")
 
 Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette version restait beaucoup plus lente que notre référence, mais était beaucoup plus simplement analysable, avec un code beaucoup plus propre. On note que la version gpu est environ mille fois plus lentes sur cow et crash sur gpu parce que les kernels prennent trop de temps.
 
@@ -67,6 +69,7 @@ Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette ve
 Google Test est un framework de tests C++, celui-ci nous a permis de vérifier durant tout le développement de la version CPU que nos fonctions
 renvoyaient des résultats cohérents et d'éviter les régressions lors de nos phases de refactos.
 
+\newpage
 
 ## Google Benchmark \cite{GBench}
 
@@ -95,6 +98,8 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 	- ce qui fait ralentir le kernel (dépendances mémoires, synchronisation, dépendances d'instructions...),
 	- ...
 
+\newpage
+
 ## Méthodologie
 
 Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé flamegraph (surtout au début) et nvvprof afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif :
@@ -103,9 +108,12 @@ Notre méthodologie était la suivante. Dès que nous avons eu notre première v
 2. Recherche de comment améliorer la partie choisie : en utilisant l'analyse fine du kernel.
 3. Implémentation de l'amélioration.
 4. Benchmark de la nouvelle méthode
+
 ### Bottlenecks
 
 Les bottlenecks ont donc été déterminés au fur et à mesure des améliorations. Au départ, les plus gros bottlenecks étaient le calcul des points les plus proches ainsi que le calcul de la covariance. A la fin, les plus gros bottlenecks sont la transmission de données et toujours le calcul des points les plus proches.
+
+\newpage
 
 # Améliorations
 
@@ -131,11 +139,15 @@ Puisque la recherche du point le plus proche est l'opération qui prend le plus 
 
 Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleures que sur CPU.
 
+\newpage
+
 ## Parallélisation des données non-dépendantes (v3 à v6)
 
 Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance: on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
 
 ![Performances v03 à v06](v03-v04-v05-v06-best.png "Performances v03 à v06")
+
+\newpage
 
 ## Matrices en column-major order (v7)
 
@@ -144,6 +156,8 @@ Après avoir fait quelques améliorations, nous nous sommes demandé ce que fera
 ![Performances v06 à v07](v06-v07-best.png "Performances v06 à v07")
 
 Malheureusement, comme on peut le voir sur le graphique, cela n'apporta pas d'amélioration. La raison étant probablement qu'il aurait fallu repenser tous nos algorithmes.
+
+\newpage
 
 ## Ajout d'un VP Tree (v8 à v11)
 
@@ -164,6 +178,8 @@ Notre première implémentation, récursive, augmentait radicalement les perform
 
 On remarque sur le graphique qu'en général la v10 est soit aux alentours de la meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous avons choisie.
 
+\newpage
+
 ## Optimisation des sommes-réductions (v12 à v18)
 
 Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommande d'améliorer d'autres kernels: les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommandation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPT}. La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
@@ -171,6 +187,8 @@ Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous r
 ![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
 
 On remarque bien une accélération, d'abord très conséquente, puis plus petite, du temps d'exécution. Il est aussi étonnant de voir que la v12 est plus rapide sur CPU que sur GPU, mais cela s'inverse dès la v13.
+
+\newpage
 
 ## Optimisation de la capacité
 
@@ -207,7 +225,7 @@ La machine utilisée pour nos différents tests durant ce projet est :
  * Memory: 32050MiB
  * OS: Manjaro Linux x86_64
 
-## Benchmark data
+## Données des benchmarks
 
 All of the data shown is in milliseconds.
 
@@ -261,6 +279,8 @@ All of the data shown is in milliseconds.
 | v05     | horse_tr1 -> horse_ref            |   5823.73       |     1058.02     |
 | v05     | horse_tr2 -> horse_ref            |   5204.57       |      991.855    |
 
+\newpage
+
 ### v06
 
 | bench   | label                             |   real_time_cpu |   real_time_gpu |
@@ -290,6 +310,8 @@ All of the data shown is in milliseconds.
 | v08     | cow_tr2 -> cow_ref                |      2.83633    |              64 |       12.8413   |             512 |
 | v08     | horse_tr1 -> horse_ref            |    225.924      |              32 |      235.663    |             512 |
 | v08     | horse_tr2 -> horse_ref            |    110.449      |              32 |      195.86     |             256 |
+
+\newpage
 
 ### v09
 
@@ -321,6 +343,8 @@ All of the data shown is in milliseconds.
 | v11     | horse_tr1 -> horse_ref            |    227.781      |              16 |       229.982   |             256 |
 | v11     | horse_tr2 -> horse_ref            |     92.2778     |              32 |       195.053   |             128 |
 
+\newpage
+
 ### v12
 
 | bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
@@ -351,6 +375,8 @@ All of the data shown is in milliseconds.
 | v14     | horse_tr1 -> horse_ref            |    219.918      |              32 |       72.3843   |             512 |
 | v14     | horse_tr2 -> horse_ref            |     89.7858     |              32 |       47.1585   |             256 |
 
+\newpage
+
 ### v15
 
 | bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
@@ -380,6 +406,8 @@ All of the data shown is in milliseconds.
 | v17     | cow_tr2 -> cow_ref                |      2.60402    |              64 |        5.27588  |             128 |
 | v17     | horse_tr1 -> horse_ref            |    216.791      |              32 |       68.8837   |             256 |
 | v17     | horse_tr2 -> horse_ref            |     89.4675     |              32 |       43.5039   |             256 |
+
+\newpage
 
 ### v18
 
