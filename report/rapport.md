@@ -207,8 +207,190 @@ La machine utilisée pour nos différents tests durant ce projet est :
  * Memory: 32050MiB
  * OS: Manjaro Linux x86_64
 
+## Benchmark data
 
-# TODO: ajouter les benchmarks globaux
+All of the data shown is in milliseconds.
+
+### v01
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v01     | line_translated_2_3_4 -> line_ref |      0.00543135 |        0.244931 |
+| v01     | cow_tr1 -> cow_ref                |      1.70033    |     1191.24     |
+| v01     | cow_tr2 -> cow_ref                |     14.7012     |    13083        |
+| v01     | horse_tr1 -> horse_ref            |   5824.46       |      nan        |
+| v01     | horse_tr2 -> horse_ref            |   5187.26       |      nan        |
+
+### v02
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v02     | line_translated_2_3_4 -> line_ref |      0.00645633 |        0.226685 |
+| v02     | cow_tr1 -> cow_ref                |      1.9773     |        8.00392  |
+| v02     | cow_tr2 -> cow_ref                |     14.8243     |       74.2754   |
+| v02     | horse_tr1 -> horse_ref            |   5545.64       |     2327.36     |
+| v02     | horse_tr2 -> horse_ref            |   5227.36       |     2182.67     |
+
+### v03
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v03     | line_translated_2_3_4 -> line_ref |       0.0056757 |        0.239157 |
+| v03     | cow_tr1 -> cow_ref                |       1.59271   |        5.77385  |
+| v03     | cow_tr2 -> cow_ref                |      21.1271    |       60.9313   |
+| v03     | horse_tr1 -> horse_ref            |    5776.08      |     2009.74     |
+| v03     | horse_tr2 -> horse_ref            |    5244.71      |     1887.13     |
+
+### v04
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v04     | line_translated_2_3_4 -> line_ref |       0.0121319 |        0.224286 |
+| v04     | cow_tr1 -> cow_ref                |       1.61068   |        3.31521  |
+| v04     | cow_tr2 -> cow_ref                |      14.7851    |       33.8556   |
+| v04     | horse_tr1 -> horse_ref            |    5807.14      |     1348.85     |
+| v04     | horse_tr2 -> horse_ref            |    5211.41      |     1264.79     |
+
+### v05
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v05     | line_translated_2_3_4 -> line_ref |      0.00698099 |        0.218379 |
+| v05     | cow_tr1 -> cow_ref                |      1.5715     |        2.28511  |
+| v05     | cow_tr2 -> cow_ref                |     15.8765     |       22.4294   |
+| v05     | horse_tr1 -> horse_ref            |   5823.73       |     1058.02     |
+| v05     | horse_tr2 -> horse_ref            |   5204.57       |      991.855    |
+
+### v06
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v06     | line_translated_2_3_4 -> line_ref |      0.00631902 |        0.219893 |
+| v06     | cow_tr1 -> cow_ref                |      1.61704    |        1.75733  |
+| v06     | cow_tr2 -> cow_ref                |     16.1609     |       16.6743   |
+| v06     | horse_tr1 -> horse_ref            |   5565.68       |      906.397    |
+| v06     | horse_tr2 -> horse_ref            |   5219.62       |      849.658    |
+
+### v07
+
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v07     | line_translated_2_3_4 -> line_ref |      0.00625744 |        0.223278 |
+| v07     | cow_tr1 -> cow_ref                |      1.67898    |        1.86757  |
+| v07     | cow_tr2 -> cow_ref                |     14.7115     |       17.8203   |
+| v07     | horse_tr1 -> horse_ref            |   5549.03       |      984.052    |
+| v07     | horse_tr2 -> horse_ref            |   5523.11       |      922.565    |
+
+### v08
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v08     | line_translated_2_3_4 -> line_ref |      0.00594303 |             128 |        0.257229 |              16 |
+| v08     | cow_tr1 -> cow_ref                |      0.374234   |             256 |        1.3343   |            1024 |
+| v08     | cow_tr2 -> cow_ref                |      2.83633    |              64 |       12.8413   |             512 |
+| v08     | horse_tr1 -> horse_ref            |    225.924      |              32 |      235.663    |             512 |
+| v08     | horse_tr2 -> horse_ref            |    110.449      |              32 |      195.86     |             256 |
+
+### v09
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v09     | line_translated_2_3_4 -> line_ref |      0.00584418 |             128 |        0.264938 |              16 |
+| v09     | cow_tr1 -> cow_ref                |      0.381556   |             128 |        1.20277  |             512 |
+| v09     | cow_tr2 -> cow_ref                |      2.76391    |              32 |        9.30332  |             512 |
+| v09     | horse_tr1 -> horse_ref            |    235.099      |              32 |      192.956    |             256 |
+| v09     | horse_tr2 -> horse_ref            |    109.676      |              32 |      167.298    |             512 |
+
+### v10
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v10     | line_translated_2_3_4 -> line_ref |      0.00583085 |             128 |        0.256499 |              16 |
+| v10     | cow_tr1 -> cow_ref                |      0.36642    |             128 |        1.25973  |            1024 |
+| v10     | cow_tr2 -> cow_ref                |      2.56471    |              32 |        9.193    |             512 |
+| v10     | horse_tr1 -> horse_ref            |    212.333      |              32 |      183.131    |             512 |
+| v10     | horse_tr2 -> horse_ref            |     86.4337     |              32 |      156.419    |             256 |
+
+### v11
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v11     | line_translated_2_3_4 -> line_ref |      0.00652639 |            1024 |         0.28771 |              16 |
+| v11     | cow_tr1 -> cow_ref                |      0.391568   |             128 |         1.46013 |            1024 |
+| v11     | cow_tr2 -> cow_ref                |      2.7548     |              32 |        13.1194  |             128 |
+| v11     | horse_tr1 -> horse_ref            |    227.781      |              16 |       229.982   |             256 |
+| v11     | horse_tr2 -> horse_ref            |     92.2778     |              32 |       195.053   |             128 |
+
+### v12
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v12     | line_translated_2_3_4 -> line_ref |      0.00583577 |              32 |        0.274496 |              16 |
+| v12     | cow_tr1 -> cow_ref                |      0.375193   |             256 |        1.37154  |             512 |
+| v12     | cow_tr2 -> cow_ref                |      2.72459    |              32 |       11.1644   |             512 |
+| v12     | horse_tr1 -> horse_ref            |    207.097      |              32 |      254.35     |             512 |
+| v12     | horse_tr2 -> horse_ref            |     94.2853     |              64 |      217.279    |             256 |
+
+### v13
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v13     | line_translated_2_3_4 -> line_ref |      0.00590876 |             128 |        0.283086 |              16 |
+| v13     | cow_tr1 -> cow_ref                |      0.357313   |             256 |        1.03466  |             512 |
+| v13     | cow_tr2 -> cow_ref                |      2.56754    |              32 |        7.81694  |             128 |
+| v13     | horse_tr1 -> horse_ref            |    220.099      |              16 |      121.239    |             256 |
+| v13     | horse_tr2 -> horse_ref            |     86.4063     |              32 |       91.999    |             256 |
+
+### v14
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v14     | line_translated_2_3_4 -> line_ref |      0.00594377 |             512 |        0.30175  |              16 |
+| v14     | cow_tr1 -> cow_ref                |      0.36655    |             128 |        0.700278 |            1024 |
+| v14     | cow_tr2 -> cow_ref                |      2.63942    |              64 |        5.46073  |             256 |
+| v14     | horse_tr1 -> horse_ref            |    219.918      |              32 |       72.3843   |             512 |
+| v14     | horse_tr2 -> horse_ref            |     89.7858     |              32 |       47.1585   |             256 |
+
+### v15
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v15     | line_translated_2_3_4 -> line_ref |      0.00565556 |              64 |         0.30356 |              16 |
+| v15     | cow_tr1 -> cow_ref                |      0.363555   |             128 |         0.71981 |            1024 |
+| v15     | cow_tr2 -> cow_ref                |      2.59607    |              64 |         5.38381 |             128 |
+| v15     | horse_tr1 -> horse_ref            |    211.115      |              32 |        71.7213  |             512 |
+| v15     | horse_tr2 -> horse_ref            |     93.0576     |              32 |        44.6898  |             256 |
+
+### v16
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v16     | line_translated_2_3_4 -> line_ref |      0.00586017 |             128 |        0.307977 |              16 |
+| v16     | cow_tr1 -> cow_ref                |      0.348388   |             128 |        0.74265  |            1024 |
+| v16     | cow_tr2 -> cow_ref                |      2.51961    |              32 |        5.48417  |             128 |
+| v16     | horse_tr1 -> horse_ref            |    222.211      |              32 |       69.7924   |             512 |
+| v16     | horse_tr2 -> horse_ref            |     94.1705     |              32 |       46.3948   |             256 |
+
+### v17
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v17     | line_translated_2_3_4 -> line_ref |      0.00577102 |              64 |        0.3146   |              16 |
+| v17     | cow_tr1 -> cow_ref                |      0.349541   |             128 |        0.720859 |             512 |
+| v17     | cow_tr2 -> cow_ref                |      2.60402    |              64 |        5.27588  |             128 |
+| v17     | horse_tr1 -> horse_ref            |    216.791      |              32 |       68.8837   |             256 |
+| v17     | horse_tr2 -> horse_ref            |     89.4675     |              32 |       43.5039   |             256 |
+
+### v18
+
+| bench   | label                             |   real_time_cpu |   threshold_cpu |   real_time_gpu |   threshold_gpu |
+|---------|-----------------------------------|-----------------|-----------------|-----------------|-----------------|
+| v18     | line_translated_2_3_4 -> line_ref |       0.0057819 |             512 |        0.289298 |              16 |
+| v18     | cow_tr1 -> cow_ref                |       0.350881  |             256 |        0.751851 |            1024 |
+| v18     | cow_tr2 -> cow_ref                |       2.45497   |              64 |        5.25223  |             128 |
+| v18     | horse_tr1 -> horse_ref            |     201.83      |              32 |       62.4554   |             512 |
+| v18     | horse_tr2 -> horse_ref            |      86.7328    |              32 |       37.0821   |             256 |
+
 
 # Conclusion
 
