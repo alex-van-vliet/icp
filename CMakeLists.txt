@@ -32,7 +32,7 @@ FetchContent_Declare(
 FetchContent_GetProperties(GoogleTest)
 if (NOT GoogleTest_POPULATED)
     FetchContent_Populate(GoogleTest)
-    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 
 FetchContent_GetProperties(Eigen3)
@@ -48,7 +48,7 @@ if (NOT GoogleBenchmark_POPULATED)
     FetchContent_Populate(GoogleBenchmark)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "From Gtest")
     set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "From Gtest")
-    add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR})
+    add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

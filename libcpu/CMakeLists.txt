@@ -11,6 +11,7 @@ target_link_libraries(libcpu eigen)
 target_link_libraries(libcpu OpenMP::OpenMP_CXX)
 
 add_executable(libcpu_tests
+  EXCLUDE_FROM_ALL
   libcpu/utils/test_matrix.cc
   libcpu/test_point-3d_utils.cc
   libcpu/test_functionnal.cc
