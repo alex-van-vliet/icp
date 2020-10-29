@@ -14,11 +14,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::cout << "Parameters:" << std::endl;
-    std::cout << "    Device: " << (options.gpu ? "GPU" : "CPU") << std::endl;
-    std::cout << "    Capacity: " << options.capacity << std::endl;
-    std::cout << "    Max iterations: " << options.iterations << std::endl;
-    std::cout << "    Error threshold: " << options.error << std::endl;
+    std::cerr << "Parameters:" << std::endl;
+    std::cerr << "    Device: " << (options.gpu ? "GPU" : "CPU") << std::endl;
+    std::cerr << "    Capacity: " << options.capacity << std::endl;
+    std::cerr << "    Max iterations: " << options.iterations << std::endl;
+    std::cerr << "    Error threshold: " << options.error << std::endl;
 
     const char* q_path = options.reference;
     auto q = libcpu::read_csv(q_path, "Points_0", "Points_1", "Points_2");
@@ -33,16 +33,16 @@ int main(int argc, char* argv[])
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)
     {
-        for (size_t j = 0; j < transform.cols; ++j)
-        {
-            std::cout << transform(i, j) << ' ';
-        }
+        std::cout << transform(i, 0);
+        for (size_t j = 1; j < transform.cols; ++j)
+            std::cout << ' ' << transform(i, j);
         std::cout << std::endl;
     }
 
     std::cout << "Points" << std::endl;
-    for (size_t i = 0; i < new_p.size() && i < 10; ++i)
-    {
-        std::cout << q[i] << " - " << new_p[i] << std::endl;
-    }
+    if (q.size() > 10)
+        q.resize(10);
+    auto closest = libcpu::closest(q, new_p);
+    for (size_t i = 0; i < q.size(); ++i)
+        std::cerr << q[i] << " - " << closest[i] << std::endl;
 }
