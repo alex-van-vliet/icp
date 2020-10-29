@@ -184,6 +184,7 @@ def main():
     versions = sorted(full_data['bench'].unique())
 
     compare_graph(full_data, ['v01', 'v16'], best=True)
+    compare_graph(full_data, ['v03', 'v04', 'v05', 'v06'], best=True)
     compare_graph(full_data, ['v08', 'v09', 'v10', 'v11'], best=True)
     compare_graph(full_data, [f"v{i}" for i in range(12, 19)], best=True)
 

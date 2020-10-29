@@ -129,7 +129,7 @@ Le simple fait de paralléliser cette opération nous a permis d'avoir des perfo
 
 Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance: on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
 
-TODO: add graphe
+![Performances v03 à v06](v03-v04-v05-v06-best.png "Performances v03 à v06")
 
 ## Matrices en column-major order (v7)
 
