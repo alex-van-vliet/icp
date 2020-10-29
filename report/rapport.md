@@ -392,6 +392,17 @@ All of the data shown is in milliseconds.
 | v18     | horse_tr2 -> horse_ref            |      86.7328    |              32 |       37.0821   |             256 |
 
 
+## Évolution des performances au cours des versions
+
+\newpage
+
+![Performances sur toutes les versions](time_vs_version-full.png "Performances sur toutes les versions")
+
+\newpage
+
+![Zoom des performances sur les v08+](time_vs_version-v08.png "Zoom des performances sur les v08+")
+
+
 # Conclusion
 
 Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de donnés disponibles, c'est à dire les tests sur `horse`.
