@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <iostream>
+#include <sys/time.h>
 
 #include "libcpu/icp.hh"
 #include "libgpu/icp.hh"
@@ -25,10 +26,18 @@ int main(int argc, char* argv[])
     const char* p_path = options.transformed;
     auto p = libcpu::read_csv(p_path, "Points_0", "Points_1", "Points_2");
 
+    struct timeval start;
+    gettimeofday(&start, nullptr);
     auto [transform, new_p] = options.gpu
         ? libgpu::icp(q, p, options.iterations, options.error, options.capacity)
         : libcpu::icp(q, p, options.iterations, options.error,
                       options.capacity);
+    struct timeval end;
+    gettimeofday(&end, nullptr);
+    long start_time = start.tv_sec * 1000 + start.tv_usec / 1000;
+    long end_time = end.tv_sec * 1000 + end.tv_usec / 1000;
+    std::cerr << "Execution time: " << (end_time - start_time) << "ms"
+              << std::endl;
 
     std::cout << "Transformation: " << std::endl;
     for (size_t i = 0; i < transform.rows; ++i)
