@@ -180,7 +180,13 @@ version avec une recherche dans un vecteur.
 Nous avons donc fait des benchmarks pour trouver la capacité nous permettant d'avoir les meilleurs
 résultats sur nos différents jeux de tests.
 
-TODO: analyse des résultats + inclure les graphes
+Comme nous pouvons le voir sur le graphe à la page suivante, notre version CPU obtient de bons résultats
+sur tous les jeux de tests avec une capacité de 32 alors que la version GPU préfère une capacité plus
+élevée à 256. Il semble donc y avoir une "valeure optimale" qui soit différente selon l'implémentation
+utilisée.
+
+
+![Analyse de la capacité v18](threshold_vs_time_v18.png "Analyse de la capacité v18")
 
 
 # Benchmark
