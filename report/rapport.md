@@ -50,7 +50,13 @@ Nous avons aussi parallélisé les kernels qui se parallélisaient de manière s
 
 ![Performances v01](v01.png "Performances V01")
 
-!include v01.md
+| bench   | label                             |   real_time_cpu |   real_time_gpu |
+|---------|-----------------------------------|-----------------|-----------------|
+| v01     | line_translated_2_3_4 -> line_ref |      0.00543135 |        0.244931 |
+| v01     | cow_tr1 -> cow_ref                |      1.70033    |     1191.24     |
+| v01     | cow_tr2 -> cow_ref                |     14.7012     |    13083        |
+| v01     | horse_tr1 -> horse_ref            |   5824.46       |      nan        |
+| v01     | horse_tr2 -> horse_ref            |   5187.26       |      nan        |
 
 Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette version restait beaucoup plus lente que notre référence, mais était beaucoup plus simplement analysable, avec un code beaucoup plus propre. On note que la version gpu est environ mille fois plus lentes sur cow et crash sur gpu parce que les kernels prennent trop de temps.
 
