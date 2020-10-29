@@ -107,7 +107,7 @@ Les bottlenecks ont donc été déterminés au fur et à mesure des amélioratio
 
 Puisque la recherche du point le plus proche est l'opération qui prend le plus de temps, nous avons décidé de commencer par la paralléliser, c'est-à-dire de lancer toutes les recherches en même temps.
 
-| bench   | label                             |   real_time_cpu |   real_time_gpu |
+| bench   | label                             |   real_time_cpu (ms) |   real_time_gpu (ms) |
 |---------|-----------------------------------|-----------------|-----------------|
 | v01     | line_translated_2_3_4 -> line_ref |      0.00543135 |        0.244931 |
 | v02     | line_translated_2_3_4 -> line_ref |      0.00645633 |        0.226685 |
@@ -212,6 +212,8 @@ mais j'ai plus d'idées
 
 Nous avons travaillé en pair programming durant tout le projet.
 
+
+\newpage
 
 \begin{thebibliography}{9}
 
