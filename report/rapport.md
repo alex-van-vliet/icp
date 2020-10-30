@@ -40,6 +40,7 @@ Sources : \cite{ICPUtah}, \cite{ICPNotebook} and \cite{ICPYouTube}
 Pour la première implémentation GPU, plutôt que de tout réécrire directement, nous avons d'abord essayé une version avec de la mémoire managée (c'est-à-dire partagée entre le CPU et le GPU). L'idée était simple : afin de ne pas réécrire tout le code, il suffisait de changer les allocations et la mémoire managée faisait le reste. Nous pourrions ensuite analyser les performances et passer sur GPU les parties problématiques.
 
 Malheureusement, ce n'était pas si facile. Après ce changement, la vitesse était si mauvaise que nous avons supprimé cette version pour recommencer. Apprenant de nos erreurs, nous avons analysé quelles parties pourraient aller sur GPU et à quels moments les transferts de mémoires étaient nécessaires. Nous avons ensuite conclu que toutes les parties itérant sur les points des nuages pourraient bénéficier d'une accélération en étant sur GPU, c'est-à-dire tout sauf la SVD que nous avons gardé sur CPU. Il reste donc trois transferts de mémoires :
+
 - à l'initialisation il faut envoyer les points sur le GPU,
 - pour la SVD, mais il s'agit que de deux fois neuf valeurs,
 - après la fin de l'algorithme pour récupérer le résultat.
