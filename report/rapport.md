@@ -93,7 +93,7 @@ Comme flamegraph, cet outil est un profiler mais cette fois-ci pour GPU. De la m
 que l'on passait dans chaque fonction mais il nous apportait des informations supplémentaire comme :
 
 - la liste des kernels à optimiser avec un score
-- une analyse fine de chaque kernel avec des informations comme:
+- une analyse fine de chaque kernel avec des informations comme :
 	- le taux d'utilisation de chaque streaming multiprocessor,
 	- le taux d'occupation, c'est-à-dire le ratio entre le nombre de warps actifs et le nombre maximum de warps supportés par chaque multiprocessor,
 	- ce qui fait ralentir le kernel (dépendances mémoires, synchronisation, dépendances d'instructions...),
@@ -143,20 +143,20 @@ Le simple fait de paralléliser cette opération nous a permis d'avoir des perfo
 ![Timeline NVIDIA Visual Profiler à la v02](v02-timeline.png "Timeline NVIDIA Visual Profiler à la v02")
 
 Avec la timeline de NVVP, nous pouvons voir que certaines fonctions simples comme le `mean_kernel` ou `apply_alignment` prennent à
-eux deux 30% du temps d'éxecution. Ce sont donc sur ces fonctions que nos prochaines optimisation se porteront.
+eux deux 30% du temps d'exécution. Ce sont donc sur ces fonctions que nos prochaines optimisations se porteront.
 
 \newpage
 
 ## Parallélisation des données non-dépendantes (v3 à v6)
 
-Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance: on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
+Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance : on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
 
 ![Performances v03 à v06](v03-v04-v05-v06-best.png "Performances v03 à v06")
 
 ![Timeline NVIDIA Visual Profiler à la v06](v06-timeline.png "Timeline NVIDIA Visual Profiler à la v06")
 
 Avec cette nouvelle timeline, nous pouvons donc voir que nous avons réussi à optimiser ces fonctions facilement parallélisables et à réduire leur impact
-sur le temps d'éxecution globale du programme. Nous nous retrouvons donc maintenant avec la fonction `closest` prenant 86% du temps d'éxecution,
+sur le temps d'exécution globale du programme. Nous nous retrouvons donc maintenant avec la fonction `closest` prenant 86% du temps d'exécution,
 cependant, cette fonction ayant déjà été parallélisée et ne voyant pas comment l'optimiser plus lorsque les points sont stockés dans des vecteurs nous
 avons choisi d'implémenter un VP Tree à partir de la v08.
 
@@ -174,13 +174,13 @@ Malheureusement, comme on peut le voir sur le graphique, cela n'apporta pas d'am
 
 ## Ajout d'un VP Tree (v8 à v11)
 
-Un Vantage-Point Tree (vp-tree) est une structure de données qui permet de trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques. La structure est simple : chaque noeud interne contient quatre informations: un centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points contenus dans la sphère de centre et de rayon donnés seront donc dans le fils "intérieur" et les autres dans le fils "extérieur". On répète celà récursivement jusqu'à ce qu'on atteigne une certaine capacité : lorsque le nombre de points est inférieur à cette capacité, on les stocke directement dans le noeud.
+Un Vantage-Point Tree (vp-tree) est une structure de données qui permet de trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques. La structure est simple : chaque noeud interne contient quatre informations : un centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points contenus dans la sphère de centre et de rayon donnés seront donc dans le fils "intérieur" et les autres dans le fils "extérieur". On répète cela récursivement jusqu'à ce qu'on atteigne une certaine capacité : lorsque le nombre de points est inférieur à cette capacité, on les stocke directement dans le noeud.
 
 La construction du vp-tree est assez simple mais pose deux questions : comment choisir le centre et le rayon. Dans beaucoup d'implémentations (\cite{GEMINI}, \cite{VPTreewriteup} and \cite{VPTreedrawings}), le centre est choisi au hasard. Dans d'autres (\cite{VPTreepython}), il est choisi comme étant le plus éloigné du centre parent. Nous avons choisi cette deuxième méthode pour sa simplicité et reproductibilité. Le rayon est lui choisit comme étant la médiane afin d'équilibrer l'arbre et donc d'assurer le `O(log n)` sur la recherche. Nous le construisons d'abord sur CPU et l'envoyons sur GPU.
 
 La recherche est fondamentalement récursive. Disons qu'on recherche le point le plus proche au point `Q`. On calcule `dist(Q, centre)` et on descend dans le fils "intérieur" (respectivement "extérieur") si la distance est plus petite (respectivement plus grande ou égale) au rayon. A la remontée, on a donc trouvé un point `N` le plus proche. Si `dist(Q, N) < |rayon - dist(Q, centre)|`, c'est-à-dire que la distance entre le point recherché et le point trouvé est inférieure à la distance entre le point recherché et le bord de la sphère, alors on a effectivement trouvé le point le plus proche. Sinon il faut aussi descendre dans l'autre fils et renvoyer le fils le plus proche entre les deux descentes.
 
-Notre première implémentation, récursive, augmentait radicalement les performances, mais le closest point restait le ralentisement principal. Nous avons donc essayé 4 versions différentes :
+Notre première implémentation, récursive, augmentait radicalement les performances, mais le closest point restait le ralentissement principal. Nous avons donc essayé 4 versions différentes :
 
 - récursive (v8),
 - itérative (seulement pour la version GPU) (v9),
@@ -197,7 +197,7 @@ On remarque sur le graphique qu'en général la v10 est soit aux alentours de la
 
 ## Optimisation des sommes-réductions (v12 à v18)
 
-Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommande d'améliorer d'autres kernels: les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommandation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPT}. La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
+Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommande d'améliorer d'autres kernels : les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommandation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPT}. La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
 
 ![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
 
@@ -235,10 +235,10 @@ utilisée.
 
 La machine utilisée pour nos différents tests durant ce projet est :
 
- * CPU: Intel i7-9700K (8) @ 4.900GHz
- * GPU: NVIDIA GeForce GTX 1660 SUPER
- * Memory: 32050MiB
- * OS: Manjaro Linux x86_64
+ * CPU : Intel i7-9700K (8) @ 4.900GHz
+ * GPU : NVIDIA GeForce GTX 1660 SUPER
+ * Mémoire : 32050MiB
+ * OS : Manjaro Linux x86_64
 
 ## Données des benchmarks
 
@@ -450,7 +450,7 @@ All of the data shown is in milliseconds.
 
 En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative Closest Point, en utilisant divers outils de benchmarking comme _Flamegraph_, _NVidia Visual Profiler_ et _Google Benchmark_ ainsi qu'une une adaptation de la méthodologie _Assess Parallelize Optimize Deploy_. Nous sommes partis d'une implémentation CPU qui, sur `horse`, prenait `5.5` secondes et sommes arrivés à `0.062` seconde, c'est-à-dire une accélération de `x88`. Pour ce faire, nous avons mis en place des techniques d'optimisation GPU comme l'_output privatization_, le _tiling_, la séparation d'algorithmes en _mapping - reduction_, le _collaborative loading_...
 
-Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été fait au vû de l'architecture des GPUs qui favorise les grands ensembles de données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois plus lente.
+Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été fait au vu de l'architecture des GPUs qui favorise les grands ensembles de données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois plus lente.
 
 Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvprof, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le temps de calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du vp-tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
 
