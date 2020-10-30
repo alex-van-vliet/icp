@@ -160,8 +160,6 @@ sur le temps d'exécution globale du programme. Nous nous retrouvons donc mainte
 cependant, cette fonction ayant déjà été parallélisée et ne voyant pas comment l'optimiser plus lorsque les points sont stockés dans des vecteurs nous
 avons choisi d'implémenter un VP Tree à partir de la v08.
 
-\newpage
-
 ## Matrices en column-major order (v7)
 
 Après avoir fait quelques améliorations, nous nous sommes demandé ce que ferait le passage de la matrice des points en column-major, puisqu'il est fréquent pour les bibliothèque GPU d'utiliser ce mode de stockage.
