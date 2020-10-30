@@ -76,7 +76,8 @@ renvoyaient des résultats cohérents et d'éviter les régressions lors de nos 
 Google Benchmark est l'outil de benchmarking qui a été utilisé pour réaliser tous les benchmarks présents dans ce rapport. Ce framework nous
 a permis de tester si nos dernières améliorations impactaient la performance de notre programme autant sur la partie CPU que la partie GPU.
 
-Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple, le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU. Le problème serait le même avec le temps d'exécution des kernels puisqu'il ne prendrait pas en compte le temps d'échange des données.
+Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time` (ou wall clock time). La raison est assez simple: le temps `cpu` a peu de sens ici puisque nous avons plusieurs threads et des calculs sur GPU. Le problème serait le même avec le temps d'exécution des kernels puisqu'il ne prendrait pas en compte le temps d'échange des données.
+Nous avons choisi de comparer nos implémentations sur plusieurs exemples: `line`, une ligne de 10 points, `cow`, une vache de 2904 points et `horse`, un cheval de 48486 points.
 Afin de stabiliser aussi les résultats, plusieurs itérations sont effectuées et on analyse la moyenne des temps d'exécutions.
 
 
@@ -433,13 +434,13 @@ All of the data shown is in milliseconds.
 
 # Conclusion
 
-Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de donnés disponibles, c'est à dire les tests sur `horse`.
+En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative Closest Point, en utilisant divers outils de benchmarking comme _Flamegraph_, _NVidia Visual Profiler_ et _Google Benchmark_ ainsi qu'une une adaptation de la méthodologie _Assess Parallelize Optimize Deploy_. Nous sommes partis d'une implémentation CPU qui, sur `horse`, prenait `5.5` secondes et sommes arrivés à `0.062` seconde, c'est-à-dire une accélération de `x88`. Pour ce faire, nous avons mis en place des techniques d'optimisation GPU comme l'_output privatization_, le _tiling_, la séparation d'algorithmes en _mapping - reduction_, le _collaborative loading_...
 
-TODO: continuer le disclaimer sur le fait qu'on puisse perdre en perfs sur les exemples simples,
-mais j'ai plus d'idées
+Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été fait au vû de l'architecture des GPUs qui favorise les grands ensembles de données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois plus lente.
+
+Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvprof, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le temps de calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du vp-tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
 
 Nous avons travaillé en pair programming durant tout le projet.
-
 
 \newpage
 
