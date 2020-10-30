@@ -159,7 +159,7 @@ Nous sommes ensuite passés à des fonctions facilement parallélisables. La pre
 Avec cette nouvelle timeline, nous pouvons donc voir que nous avons réussi à optimiser ces fonctions facilement parallélisables et à réduire leur impact
 sur le temps d'exécution globale du programme. Nous nous retrouvons donc maintenant avec la fonction `closest` prenant 86% du temps d'exécution,
 cependant, cette fonction ayant déjà été parallélisée et ne voyant pas comment l'optimiser plus lorsque les points sont stockés dans des vecteurs nous
-avons choisi d'implémenter un VP Tree à partir de la v08.
+avons choisi d'implémenter un VP-Tree à partir de la v08.
 
 ## Matrices en column-major order (v7)
 
@@ -171,11 +171,11 @@ Malheureusement, comme on peut le voir sur le graphique, cela n'apporta pas d'am
 
 \newpage
 
-## Ajout d'un VP Tree (v8 à v11)
+## Ajout d'un VP-Tree (v8 à v11)
 
-Un Vantage-Point Tree (vp-tree) est une structure de données qui permet de trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques. La structure est simple : chaque noeud interne contient quatre informations : un centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points contenus dans la sphère de centre et de rayon donnés seront donc dans le fils "intérieur" et les autres dans le fils "extérieur". On répète cela récursivement jusqu'à ce qu'on atteigne une certaine capacité : lorsque le nombre de points est inférieur à cette capacité, on les stocke directement dans le noeud.
+Un Vantage-Point Tree (VP-Tree) est une structure de données qui permet de trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques. La structure est simple : chaque noeud interne contient quatre informations : un centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points contenus dans la sphère de centre et de rayon donnés seront donc dans le fils "intérieur" et les autres dans le fils "extérieur". On répète cela récursivement jusqu'à ce qu'on atteigne une certaine capacité : lorsque le nombre de points est inférieur à cette capacité, on les stocke directement dans le noeud.
 
-La construction du vp-tree est assez simple mais pose deux questions : comment choisir le centre et le rayon. Dans beaucoup d'implémentations (\cite{GEMINI}, \cite{VPTreewriteup} and \cite{VPTreedrawings}), le centre est choisi au hasard. Dans d'autres (\cite{VPTreepython}), il est choisi comme étant le plus éloigné du centre parent. Nous avons choisi cette deuxième méthode pour sa simplicité et reproductibilité. Le rayon est lui choisit comme étant la médiane afin d'équilibrer l'arbre et donc d'assurer le `O(log n)` sur la recherche. Nous le construisons d'abord sur CPU et l'envoyons sur GPU.
+La construction du VP-Tree est assez simple mais pose deux questions : comment choisir le centre et le rayon. Dans beaucoup d'implémentations (\cite{GEMINI}, \cite{VPTreewriteup} and \cite{VPTreedrawings}), le centre est choisi au hasard. Dans d'autres (\cite{VPTreepython}), il est choisi comme étant le plus éloigné du centre parent. Nous avons choisi cette deuxième méthode pour sa simplicité et reproductibilité. Le rayon est lui choisit comme étant la médiane afin d'équilibrer l'arbre et donc d'assurer le `O(log n)` sur la recherche. Nous le construisons d'abord sur CPU et l'envoyons sur GPU.
 
 La recherche est fondamentalement récursive. Disons qu'on recherche le point le plus proche au point `Q`. On calcule `dist(Q, centre)` et on descend dans le fils "intérieur" (respectivement "extérieur") si la distance est plus petite (respectivement plus grande ou égale) au rayon. A la remontée, on a donc trouvé un point `N` le plus proche. Si `dist(Q, N) < |rayon - dist(Q, centre)|`, c'est-à-dire que la distance entre le point recherché et le point trouvé est inférieure à la distance entre le point recherché et le bord de la sphère, alors on a effectivement trouvé le point le plus proche. Sinon il faut aussi descendre dans l'autre fils et renvoyer le fils le plus proche entre les deux descentes.
 
@@ -206,7 +206,7 @@ On remarque bien une accélération, d'abord très conséquente, puis plus petit
 
 ## Optimisation de la capacité
 
-Après l'implémentation du VP Tree, nous avions choisi arbitrairement une capacité de 8 pour celui-ci,
+Après l'implémentation du VP-Tree, nous avions choisi arbitrairement une capacité de 8 pour celui-ci,
 cela veut dire que lorsque l'on essayait de créer un noeud avec moins de 8 éléments ils étaient tous
 stockés dans une liste de points.
 
