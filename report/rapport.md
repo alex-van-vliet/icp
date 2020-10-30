@@ -140,6 +140,11 @@ Puisque la recherche du point le plus proche est l'opération qui prend le plus 
 
 Le simple fait de paralléliser cette opération nous a permis d'avoir des performances comparables voire meilleures que sur CPU.
 
+![Timeline NVIDIA Visual Profiler à la v02](v02-timeline.png "Timeline NVIDIA Visual Profiler à la v02")
+
+Avec la timeline de NVVP, nous pouvons voir que certaines fonctions simples comme le `mean_kernel` ou `apply_alignment` prennent à
+eux deux 30% du temps d'éxecution. Ce sont donc sur ces fonctions que nos prochaines optimisation se porteront.
+
 \newpage
 
 ## Parallélisation des données non-dépendantes (v3 à v6)
@@ -147,6 +152,13 @@ Le simple fait de paralléliser cette opération nous a permis d'avoir des perfo
 Nous sommes ensuite passés à des fonctions facilement parallélisables. La première amélioration de cette catégorie fût la moyenne. Le nombre de points étant connu, on peut diviser les coordonnées de chaque point en même temps, et ensuite effectuer la somme de ces résultats (v3). La deuxième amélioration fût la parallélisation du calcul de la matrice de covariance: on peut calculer chaque valeur indépendamment des autres (v4). La troisième fût la parallélisation de l'application de la transformation, puisqu'elle s'applique aussi à chaque point séparément (v5). La dernière fût la séparation du calcul de l'erreur entre distance avec le point associé, et somme des distances (v6).
 
 ![Performances v03 à v06](v03-v04-v05-v06-best.png "Performances v03 à v06")
+
+![Timeline NVIDIA Visual Profiler à la v06](v06-timeline.png "Timeline NVIDIA Visual Profiler à la v06")
+
+Avec cette nouvelle timeline, nous pouvons donc voir que nous avons réussi à optimiser ces fonctions facilement parallélisables et à réduire leur impact
+sur le temps d'éxecution globale du programme. Nous nous retrouvons donc maintenant avec la fonction `closest` prenant 86% du temps d'éxecution,
+cependant, cette fonction ayant déjà été parallélisée et ne voyant pas comment l'optimiser plus lorsque les points sont stockés dans des vecteurs nous
+avons choisi d'implémenter un VP Tree à partir de la v08.
 
 \newpage
 
@@ -178,6 +190,8 @@ Notre première implémentation, récursive, augmentait radicalement les perform
 ![Performances v08 à v11](v08-v09-v10-v11-best.png "Performances v08 à v11")
 
 On remarque sur le graphique qu'en général la v10 est soit aux alentours de la meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous avons choisie.
+
+![Timeline NVIDIA Visual Profiler à la v10](v10-timeline.png "Timeline NVIDIA Visual Profiler à la v10")
 
 \newpage
 
