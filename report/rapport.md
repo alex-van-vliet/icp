@@ -23,7 +23,7 @@ Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins d'é
 - calcul de la matrice de transformation pour passer du premier nuage centré à son nuage associé en utilisant une décomposition en valeurs singulières de la matrice de covariance,
 - application de la matrice au premier nuage.
 
-Ces étapes sont reproduites tant que l'erreur n'est pas suffisamment faible, c'est à dire tant que les deux nuages de points ne sont pas superposés, ou qu'un nombre d'itérations maximal n'est pas atteint.
+Ces étapes sont reproduites tant que l'erreur n'est pas suffisamment faible, c'est-à-dire tant que les deux nuages de points ne sont pas superposés, ou qu'un nombre d'itérations maximal n'est pas atteint.
 
 # Première implémentation
 
@@ -450,7 +450,7 @@ En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative 
 
 Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été fait au vu de l'architecture des GPUs qui favorise les grands ensembles de données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois plus lente.
 
-Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvprof, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le temps de calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du vp-tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
+Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvprof, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du vp-tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
 
 Nous avons travaillé en pair programming durant tout le projet.
 
