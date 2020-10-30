@@ -104,9 +104,9 @@ que l'on passait dans chaque fonction mais il nous apportait des informations su
 
 ## Méthodologie
 
-Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé flamegraph (surtout au début) et nvvprof afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif :
+Notre méthodologie était la suivante. Dès que nous avons eu notre première version fonctionnelle, nous avons utilisé flamegraph (surtout au début) et nvvp afin de déterminer quelles étaient les parties de notre code à améliorer ainsi que les modifications à effectuer. C'était donc un procédé itératif :
 
-1. Choix d'une partie à améliorer : en utilisant la durée d'exécution de chaque kernel ainsi que la liste des kernels à optimiser fournie par nvvprof.
+1. Choix d'une partie à améliorer : en utilisant la durée d'exécution de chaque kernel ainsi que la liste des kernels à optimiser fournie par nvvp.
 2. Recherche de comment améliorer la partie choisie : en utilisant l'analyse fine du kernel.
 3. Implémentation de l'amélioration.
 4. Benchmark de la nouvelle méthode
@@ -143,7 +143,7 @@ Le simple fait de paralléliser cette opération nous a permis d'avoir des perfo
 
 ![Timeline NVIDIA Visual Profiler à la v02](v02-timeline.png "Timeline NVIDIA Visual Profiler à la v02")
 
-Avec la timeline de NVVP, nous pouvons voir que certaines fonctions simples comme le `mean_kernel` ou `apply_alignment` prennent à
+Avec la timeline de nvvp, nous pouvons voir que certaines fonctions simples comme le `mean_kernel` ou `apply_alignment` prennent à
 eux deux 30% du temps d'exécution. Ce sont donc sur ces fonctions que nos prochaines optimisations se porteront.
 
 \newpage
@@ -196,7 +196,7 @@ On remarque sur le graphique qu'en général la v10 est soit aux alentours de la
 
 ## Optimisation des sommes-réductions (v12 à v18)
 
-Avec cette dernière version, nous nous retrouvons enfin avec nvvprof qui nous recommande d'améliorer d'autres kernels : les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommandation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPR}. La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
+Avec cette dernière version, nous nous retrouvons enfin avec nvvp qui nous recommande d'améliorer d'autres kernels : les sommes qui sont des réductions. Ce sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur. La première recommandation était la matrice de covariance. Nous avons donc commencé par séparer la multiplication de la somme puisque cette première peut se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling` afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPR}. La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative loading_ et du _sequential addressing_ pour paralléliser le chargement de mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La deuxième étape fût de faire la première somme lors du chargement de la mémoire afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne plus avoir de condition et de synchronisation (v17). Finalement, nous avons refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière récursive et l'avons appliqué au calcul de l'erreur (v18).
 
 ![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
 
@@ -451,7 +451,7 @@ En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative 
 
 Durant tout le déroulement du projet, notre but était d'optimiser les plus gros jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été fait au vu de l'architecture des GPUs qui favorise les grands ensembles de données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois plus lente.
 
-Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvprof, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du vp-tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
+Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre nvvp, le kernel qui pourrait le plus bénéficier d'une accélération est le premier closest point. On remarque d'ailleurs sur la timeline que c'est effectivement le kernel qui prend le plus de temps, mais aussi que le calcul des points les plus proches prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers la référence, au début les points étant plus éloignés, on descend plus souvent dans les deux fils du VP-Tree. Il pourrait alors être intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
 
 Nous avons travaillé en pair programming durant tout le projet.
 
