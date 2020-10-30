@@ -443,6 +443,12 @@ Nous avons travaillé en pair programming durant tout le projet.
 
 \newpage
 
+# Références
+
+\begingroup
+
+\renewcommand{\section}[2]{}
+
 \begin{thebibliography}{9}
 
 \bibitem{ICPUtah}
@@ -498,3 +504,5 @@ Mark Harris
 \url{https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf}
 
 \end{thebibliography}
+
+\endgroup
