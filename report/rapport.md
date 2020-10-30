@@ -67,7 +67,7 @@ Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette ve
 ## Google Test \cite{GTest}
 
 Google Test est un framework de tests C++, celui-ci nous a permis de vérifier durant tout le développement de la version CPU que nos fonctions
-renvoyaient des résultats cohérents et d'éviter les régressions lors de nos phases de refactos.
+renvoyaient des résultats cohérents et d'éviter les régressions lors de nos phases de refactorisations.
 
 \newpage
 
