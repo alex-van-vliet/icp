@@ -171,8 +171,8 @@ La recherche est fondamentalement récursive. Disons qu'on recherche le point le
 Notre première implémentation, récursive, augmentait radicalement les performances, mais le closest point restait le ralentisement principal. Nous avons donc essayé 4 versions différentes :
 
 - récursive (v8),
-- itérative (v9),
-- itérative (v10) mais en retirant le closest point des données à la construction, il faut donc le rajouter lorsqu'on remonte de la recherche,
+- itérative (seulement pour la version GPU) (v9),
+- itérative (seulement pour la version GPU) (v10) mais en retirant le closest point des données à la construction, il faut donc le rajouter lorsqu'on remonte de la recherche,
 - récursive (v11), idem.
 
 ![Performances v08 à v11](v08-v09-v10-v11-best.png "Performances v08 à v11")
