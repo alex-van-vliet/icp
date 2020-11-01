@@ -168,7 +168,7 @@ que les modifications à effectuer. C'était donc un procédé itératif :
 1. Choix d'une partie à améliorer : en utilisant la durée d'exécution de chaque
    kernel ainsi que la liste des kernels à optimiser fournie par nvvp.
 2. Recherche de comment améliorer la partie choisie : en utilisant l'analyse
-   fine du kernel, les méthodes vues ainsi que des articles et publications.
+   fine du kernel, les méthodes vues en cours ainsi que des articles et publications.
 3. Implémentation de l'amélioration.
 4. Benchmark de la nouvelle méthode
 
@@ -346,7 +346,7 @@ capacité de 8 pour celui-ci, cela veut dire que lorsque l'on essayait de créer
 un noeud avec moins de 8 éléments ils étaient tous stockés dans une liste de
 points.
 
-Le choix de cette capacité impacte l'arbre résultant: si la capacité choisie est
+Le choix de cette capacité impacte l'arbre résultant : si la capacité choisie est
 faible, l'arbre sera plus profond et il y aura plus de noeuds. Au contraire, si
 cette capacité est élevée, l'arbre aura une hauteur très faible voire nulle
 si le nombre de points est inférieur à la capacité. Dans ce cas-là, notre
@@ -513,7 +513,7 @@ Toutes les mesures temporelles affichées sont en millisecondes.
 
 En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative
 Closest Point, en utilisant divers outils de benchmarking comme Flamegraph,
-NVidia Visual Profiler et Google Benchmark ainsi qu'une une adaptation de la
+NVidia Visual Profiler et Google Benchmark ainsi qu'une adaptation de la
 méthodologie _Assess Parallelize Optimize Deploy_. Nous sommes partis d'une
 implémentation CPU qui, sur `horse`, prenait `5.5` secondes et sommes arrivés à
 `0.062` seconde, c'est-à-dire une accélération de `x88`. Pour ce faire, nous
@@ -528,7 +528,7 @@ données. Ça se remarque d'ailleurs sur des petits exemples comme `cow` où la
 version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois
 plus lente.
 
-Nous avons aussi encore déterminé deux axes d'amélioration. Comme nous le montre
+Nous avons aussi déterminé deux axes d'amélioration. Comme nous le montre
 nvvp, le kernel qui pourrait le plus bénéficier d'une accélération est le
 premier `closest point`. Une première amélioration pourrait se faire lors de la
 recherche linéaire du dernier niveau de l'arbre. En utilisant du parallélisme
