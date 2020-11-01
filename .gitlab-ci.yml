@@ -1,0 +1,10 @@
+build-report:
+    image:
+        name: pandoc/latex
+        entrypoint: ['']
+    script:
+        - tlmgr install adjustbox babel-german background bidi collectbox csquotes everypage filehook footmisc footnotebackref framed fvextra letltxmacro ly1 mdframed mweights needspace pagecolor sourcecodepro sourcesanspro titling ucharcat ulem unicode-math upquote xecjk xurl zref
+        - cd report && pandoc rapport.md --standalone --toc --toc-depth 2 -f markdown --template=https://raw.githubusercontent.com/Wandmalfarbe/pandoc-latex-template/master/eisvogel.tex -o rapport.pdf
+    artifacts:
+        paths:
+            - "report/rapport.pdf"
