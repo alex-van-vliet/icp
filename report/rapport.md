@@ -14,26 +14,27 @@ header-include: |
 
 # Introduction
 
-L'Iterative Closest Point (ICP) est un algorithme d'alignement de nuages de
+L'_Iterative Closest Point_ (ICP) est un algorithme d'alignement de nuages de
 points. Il permet de déterminer la transformation entre deux nuages de points
 représentant un même objet dans deux positions différentes en minimisant de
 manière itérative la distance entre les points. C'est un algorithme très utilisé
 en robotique et vision par ordinateur, notamment pour les algorithmes de
-Simultaneous Localisation And Mapping (SLAM), pour la reconstruction de surfaces
+_Simultaneous Localisation And Mapping_ (SLAM), pour la reconstruction de surfaces
 et de volumes...
 
 Il existe de nombreuses variantes de l'ICP toutes rencontrant plus ou moins
-d'étapes en fonction du résultat recherché. Voici les étapes de l'algorithme que
-nous avons choisi :
+d'étapes en fonction du résultat recherché. En considérant deux nuages
+de points, un de référence et un transformé, voici les étapes de l'algorithme
+que nous avons choisi :
 
 - centrage des deux nuages de points,
 - détermination des associations (appelé nuage associé) entre les nuages
-  centrés, c'est-à-dire pour chaque point dans le premier nuage de point,
-  détection de son point le plus proche dans le deuxième,
-- calcul de la matrice de transformation pour passer du premier nuage centré à
+  centrés, c'est-à-dire pour chaque point dans le nuage transformé centré,
+  détection de son point le plus proche dans le nuage de référence centré,
+- calcul de la matrice de transformation pour passer du nuage transformé centré à
   son nuage associé en utilisant une décomposition en valeurs singulières de la
-  matrice de covariance,
-- application de la matrice au premier nuage.
+  matrice de covariance pour déterminer la rotation,
+- application de la matrice au nuage transformé.
 
 Ces étapes sont reproduites tant que l'erreur n'est pas suffisamment faible,
 c'est-à-dire tant que les deux nuages de points ne sont pas superposés, ou qu'un
@@ -48,10 +49,10 @@ de l'explication précédente en utilisant un `std::vector` de `Point3D` pour
 représenter les nuages de points et une classe `Matrix` pour la matrice de
 transformation. La SVD est faite avec `Eigen`, une bibliothèque d'algèbre
 linéaire en C++. Une fois cette version basique fonctionnelle, nous avons
-parallélisé le calcul du point le plus proche, et le centrage des nuages de
-points en lançant les recherches sur plusieurs threads avec OpenMP. Une petite
+parallélisé les calculs du point le plus proche (en lançant les recherches
+en simultané) et le centrage des nuages de points avec OpenMP. Une petite
 amélioration algorithmique a aussi été ajoutée : il suffit de centrer le nuage
-de points d'arrivée une seule fois puisqu'il ne change pas.
+de points de référence une seule fois puisqu'il ne change pas.
 
 Sources : \cite{ICPUtah}, \cite{ICPNotebook} and \cite{ICPYouTube}
 
@@ -66,9 +67,9 @@ tout le code, il suffisait de changer les allocations et la mémoire managée
 faisait le reste. Nous pourrions ensuite analyser les performances et passer sur
 GPU les parties problématiques.
 
-Malheureusement, ce n'était pas si facile. Après ce changement, la vitesse était
+Malheureusement, ce ne fut pas si facile. Après ce changement, la vitesse était
 si mauvaise que nous avons supprimé cette version pour recommencer. Apprenant de
-nos erreurs, nous avons analysé quelles parties pourraient aller sur GPU et à
+nos erreurs, nous avons analysé les parties qui pourraient aller sur GPU et à
 quels moments les transferts de mémoires étaient nécessaires. Nous avons ensuite
 conclu que toutes les parties itérant sur les points des nuages pourraient
 bénéficier d'une accélération en étant sur GPU, c'est-à-dire tout sauf la SVD
@@ -100,7 +101,7 @@ simple comme le centrage des points.
 Après avoir implémenté toutes les parties susmentionnées avec CUDA, cette
 version restait beaucoup plus lente que notre référence, mais était beaucoup
 plus simplement analysable, avec un code beaucoup plus propre. On note que la
-version gpu est environ mille fois plus lentes sur cow et crash sur gpu parce
+version GPU est environ mille fois plus lentes sur `cow` et plante sur `horse` parce
 que les kernels prennent trop de temps.
 
 # Indicateurs de performance
@@ -121,36 +122,36 @@ tous les benchmarks présents dans ce rapport. Ce framework nous a permis de
 tester si nos dernières améliorations impactaient la performance de notre
 programme autant sur la partie CPU que la partie GPU.
 
-Pour comparer nos implémentations, nous avons choisi d'utiliser le `real_time`
-(ou wall clock time). La raison est assez simple: le temps `cpu` a peu de sens
+Pour comparer nos implémentations, nous avons choisi d'utiliser le _real time_
+(ou _wall clock time_). La raison est assez simple: le _cpu time_ a peu de sens
 ici puisque nous avons plusieurs threads et des calculs sur GPU. Le problème
 serait le même avec le temps d'exécution des kernels puisqu'il ne prendrait pas
-en compte le temps d'échange des données. Nous avons choisi de comparer nos
+en compte le temps d'échange des données. Nous avons aussi choisi de comparer nos
 implémentations sur plusieurs exemples: `line`, une ligne de 10 points, `cow`,
 une vache de 2904 points et `horse`, un cheval de 48486 points. Afin de
-stabiliser aussi les résultats, plusieurs itérations sont effectuées et on
+stabiliser les résultats, plusieurs itérations ont été effectuées et on
 analyse la moyenne des temps d'exécutions.
 
 
 ## Flamegraph \cite{Flamegraph}
 
-Cet outil de profiling nous a permis de voir sur l'implémentation CPU, les
-fonctions qui prenaient le plus de temps pour avoir des informations sur les
+Cet outil de _profiling_ nous a permis de voir, sur l'implémentation CPU, les
+fonctions qui prenaient le plus de temps, afin d'avoir des informations sur les
 fonctions a optimiser.
 
 
 ## NVidia Visual Profiler \cite{NVVP}
 
-Comme flamegraph, cet outil est un profiler mais cette fois-ci pour GPU. De la
-même façon que flamegraph, il nous permettait de voir le temps que l'on passait
-dans chaque fonction mais il nous apportait des informations supplémentaire
+Comme flamegraph, nvvp outil est un _profiler_ mais cette fois-ci pour GPU. De la
+même façon que flamegraph, il nous a permis de voir le temps que l'on passait
+dans chaque fonction? En plus de cela, il nous apportait des informations supplémentaire
 comme :
 
 - la liste des kernels à optimiser avec un score
 - une analyse fine de chaque kernel avec des informations comme :
-	- le taux d'utilisation de chaque streaming multiprocessor,
+	- le taux d'utilisation de chaque _streaming multiprocessor_,
 	- le taux d'occupation, c'est-à-dire le ratio entre le nombre de warps
-       actifs et le nombre maximum de warps supportés par chaque multiprocessor,
+       actifs et le nombre maximum de warps supportés par chaque _multiprocessor_,
 	- ce qui fait ralentir le kernel (dépendances mémoires, synchronisation,
        dépendances d'instructions...),
 	- ...
@@ -167,13 +168,17 @@ que les modifications à effectuer. C'était donc un procédé itératif :
 1. Choix d'une partie à améliorer : en utilisant la durée d'exécution de chaque
    kernel ainsi que la liste des kernels à optimiser fournie par nvvp.
 2. Recherche de comment améliorer la partie choisie : en utilisant l'analyse
-   fine du kernel.
+   fine du kernel, les méthodes vues ainsi que des articles et publications.
 3. Implémentation de l'amélioration.
 4. Benchmark de la nouvelle méthode
 
 ### Bottlenecks
 
-Les bottlenecks ont donc été déterminés au fur et à mesure des améliorations. Au départ, les plus gros bottlenecks étaient le calcul des points les plus proches ainsi que le calcul de la covariance. A la fin, les plus gros bottlenecks sont la transmission de données et toujours le calcul des points les plus proches.
+Les bottlenecks ont donc été déterminés au fur et à mesure des améliorations.
+Au départ, les plus gros bottlenecks étaient le calcul des points les plus
+proches ainsi que le calcul de la covariance. A la fin, les plus gros
+bottlenecks sont la transmission de données et toujours le calcul des
+points les plus proches.
 
 \newpage
 
@@ -229,10 +234,13 @@ l'erreur entre distance avec le point associé, et somme des distances (v6).
 
 ![Timeline NVIDIA Visual Profiler à la v06](v06-timeline.png "Timeline NVIDIA Visual Profiler à la v06")
 
-Avec cette nouvelle timeline, nous pouvons donc voir que nous avons réussi à optimiser ces fonctions facilement parallélisables et à réduire leur impact
-sur le temps d'exécution globale du programme. Nous nous retrouvons donc maintenant avec la fonction `closest` prenant 86% du temps d'exécution,
-cependant, cette fonction ayant déjà été parallélisée et ne voyant pas comment l'optimiser plus lorsque les points sont stockés dans des vecteurs nous
-avons choisi d'implémenter un VP-Tree à partir de la v08.
+Avec cette nouvelle timeline, nous pouvons donc voir que nous avons réussi
+à optimiser ces fonctions facilement parallélisables et à réduire leur impact
+sur le temps d'exécution global du programme. Nous nous retrouvons donc
+maintenant avec la fonction `closest` prenant 86% du temps d'exécution.
+Cependant, cette fonction ayant déjà été parallélisée et ne voyant pas
+comment l'optimiser plus lorsque les points sont stockés dans des vecteurs,
+nous avons choisi d'implémenter un VP-Tree à partir de la v08.
 
 ## Matrices en column-major order (v7)
 
@@ -252,13 +260,14 @@ nos algorithmes.
 
 Un Vantage-Point Tree (VP-Tree) est une structure de données qui permet de
 trouver le plus proche voisin de manière efficace (en `O(log n)`), un peu à la
-manière d'un octree ou d'un kd-tree, qui fonctionne dans des espaces métriques.
-La structure est simple : chaque noeud interne contient quatre informations : un
-centre, un rayon, un fils "intérieur" et un fils "extérieur". Tous les points
-contenus dans la sphère de centre et de rayon donnés seront donc dans le fils
-"intérieur" et les autres dans le fils "extérieur". On répète cela récursivement
-jusqu'à ce qu'on atteigne une certaine capacité : lorsque le nombre de points
-est inférieur à cette capacité, on les stocke directement dans le noeud.
+manière d'un octree ou d'un kd-tree, qui fonctionne uniquement dans des espaces
+métriques. La structure est simple : chaque noeud interne contient quatre
+informations : un centre, un rayon, un fils "intérieur" et un fils "extérieur".
+Tous les points contenus dans la sphère de centre et de rayon donnés seront
+donc dans le fils "intérieur" et les autres dans le fils "extérieur".
+On répète cela récursivement jusqu'à ce qu'on atteigne une certaine capacité :
+lorsque le nombre de points est inférieur à cette capacité, on les stocke
+directement dans le noeud.
 
 La construction du VP-Tree est assez simple mais pose deux questions : comment
 choisir le centre et le rayon. Dans beaucoup d'implémentations (\cite{GEMINI},
@@ -277,7 +286,7 @@ un point `N` le plus proche. Si `dist(Q, N) < |rayon - dist(Q, centre)|`,
 c'est-à-dire que la distance entre le point recherché et le point trouvé est
 inférieure à la distance entre le point recherché et le bord de la sphère, alors
 on a effectivement trouvé le point le plus proche. Sinon il faut aussi descendre
-dans l'autre fils et renvoyer le fils le plus proche entre les deux descentes.
+dans l'autre fils et renvoyer le point le plus proche entre les deux descentes.
 
 Notre première implémentation, récursive, augmentait radicalement les
 performances, mais le closest point restait le ralentissement principal. Nous
@@ -292,11 +301,11 @@ avons donc essayé 4 versions différentes :
 
 ![Performances v08 à v11](v08-v09-v10-v11-best.png "Performances v08 à v11")
 
+![Timeline NVIDIA Visual Profiler à la v10](v10-timeline.png "Timeline NVIDIA Visual Profiler à la v10")
+
 On remarque sur le graphique qu'en général la v10 est soit aux alentours de la
 meilleure méthode, soit la meilleure méthode. C'est donc cette version que nous
 avons choisie.
-
-![Timeline NVIDIA Visual Profiler à la v10](v10-timeline.png "Timeline NVIDIA Visual Profiler à la v10")
 
 \newpage
 
@@ -307,18 +316,19 @@ recommande d'améliorer d'autres kernels : les sommes qui sont des réductions. 
 sont donc : le calcul de la matrice de covariance, de la moyenne et de l'erreur.
 La première recommandation était la matrice de covariance. Nous avons donc
 commencé par séparer la multiplication de la somme puisque cette première peut
-se faire de manière parallèle (v12). Ensuite, nous avons utilisé du `tiling`
+se faire de manière parallèle (v12). Ensuite, nous avons utilisé du _tiling_
 afin de pouvoir effectuer les réductions en parallèle (v13), que nous avons
 ensuite appliqué à la moyenne (v14). Afin d'optimiser la performance de chaque
 bloc, nous avons utilisé les techniques proposées par NVidia \cite{NVIDIA-OPR}.
-La première étape fût d'utiliser plusieurs warps par bloc avec du `collaborative
-loading` et du `sequential addressing` pour paralléliser le chargement de
+La première étape fût d'utiliser plusieurs warps par bloc avec du _collaborative
+loading_ et du _sequential addressing_ pour paralléliser le chargement de
 mémoire, ainsi qu'éviter les divergences et conflit de banques (v15). La
 deuxième étape fût de faire la première somme lors du chargement de la mémoire
 afin de plus utiliser chaque thread (v16). La troisième étape fût de dérouler la
 boucle lorsque le nombre de threads actifs rentre dans un seul warp, afin de ne
-plus avoir de condition et de synchronisation (v17). Finalement, nous avons
-refactorisé tout le code afin de pouvoir faire cette somme par bloc de manière
+plus avoir de condition et de synchronisation puisque sur un seul warp,
+les opérations sont synchrones (v17). Finalement, nous avons refactorisé
+tout le code afin de pouvoir faire cette somme par bloc de manière
 récursive et l'avons appliqué au calcul de l'erreur (v18).
 
 ![Performances v12 à v18](v12-v13-v14-v15-v16-v17-v18-best.png "Performances v12 à v18")
@@ -336,10 +346,10 @@ capacité de 8 pour celui-ci, cela veut dire que lorsque l'on essayait de créer
 un noeud avec moins de 8 éléments ils étaient tous stockés dans une liste de
 points.
 
-Le choix de cette capacité impacte l'arbre résultant, si la capacité choisie est
+Le choix de cette capacité impacte l'arbre résultant: si la capacité choisie est
 faible, l'arbre sera plus profond et il y aura plus de noeuds. Au contraire, si
-cette capacité est élevée, l'arbre aura une depth très faible voire une depth de
-1 si le nombre de points est inférieur à la capacité, dans ce cas-là, notre
+cette capacité est élevée, l'arbre aura une hauteur très faible voire nulle
+si le nombre de points est inférieur à la capacité. Dans ce cas-là, notre
 structure de donnée ne nous apporte plus aucun avantage comparé à notre première
 version avec une recherche dans un vecteur.
 
@@ -369,7 +379,7 @@ La machine utilisée pour nos différents tests durant ce projet est :
 
 ## Données des benchmarks
 
-All of the data shown is in milliseconds.
+Toutes les mesures temporelles affichées sont en millisecondes.
 
 ### v01 to v07
 
@@ -502,14 +512,14 @@ All of the data shown is in milliseconds.
 # Conclusion
 
 En conclusion, nous avons implémenté et optimisé l'algorithme de l'Iterative
-Closest Point, en utilisant divers outils de benchmarking comme `Flamegraph`,
-`NVidia Visual Profiler` et `Google Benchmark` ainsi qu'une une adaptation de la
-méthodologie `Assess Parallelize Optimize Deploy`. Nous sommes partis d'une
+Closest Point, en utilisant divers outils de benchmarking comme Flamegraph,
+NVidia Visual Profiler et Google Benchmark ainsi qu'une une adaptation de la
+méthodologie _Assess Parallelize Optimize Deploy_. Nous sommes partis d'une
 implémentation CPU qui, sur `horse`, prenait `5.5` secondes et sommes arrivés à
 `0.062` seconde, c'est-à-dire une accélération de `x88`. Pour ce faire, nous
-avons mis en place des techniques d'optimisation GPU comme l'`output
-privatization`, le `tiling`, la séparation d'algorithmes en `mapping -
-reduction`, le `collaborative loading`...
+avons mis en place des techniques d'optimisation GPU comme l'_output
+privatization_, le _tiling_, la séparation d'algorithmes en _mapping -
+reduction_, le _collaborative loading_...
 
 Durant tout le déroulement du projet, notre but était d'optimiser les plus gros
 jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été
@@ -518,15 +528,17 @@ données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la
 version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois
 plus lente.
 
-Nous avons aussi encore déterminé un axe d'amélioration. Comme nous le montre
+Nous avons aussi encore déterminé deux axes d'amélioration. Comme nous le montre
 nvvp, le kernel qui pourrait le plus bénéficier d'une accélération est le
-premier closest point. On remarque d'ailleurs sur la timeline que c'est
-effectivement le kernel qui prend le plus de temps, mais aussi que le calcul des
-points les plus proches prends de moins en moins de temps. On peut imaginer que
-puisqu'on se déplace vers la référence, au début les points étant plus éloignés,
-on descend plus souvent dans les deux fils du VP-Tree. Il pourrait alors être
-intéressant d'utiliser une structure d'arbre qui n'est pas métrique, comme un
-kd-tree ou un octree.
+premier `closest point`. Une première amélioration pourrait se faire lors de la
+recherche linéaire du dernier niveau de l'arbre. En utilisant du parallélisme
+dynamique, il serait possible de calculer la distance entre le point recherché
+et tous les points de la liste en parallèle, puis d'effectuer une réduction par bloc.
+Deuxièmement, on remarque sur la timeline que le calcul des points les plus proches
+prends de moins en moins de temps. On peut imaginer que puisqu'on se déplace vers
+la référence, au début les points étant plus éloignés, on descend plus souvent
+dans les deux fils du VP-Tree. Il pourrait alors être intéressant d'utiliser
+une structure d'arbre qui n'est pas métrique, comme un kd-tree ou un octree.
 
 Nous avons travaillé en pair programming durant tout le projet.
 
