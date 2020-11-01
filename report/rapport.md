@@ -359,7 +359,7 @@ d'avoir les meilleurs résultats sur nos différents jeux de tests.
 Comme nous pouvons le voir sur le graphe à la page suivante, notre version CPU
 obtient de bons résultats sur tous les jeux de tests avec une capacité de 32
 alors que la version GPU préfère une capacité plus élevée à 256. Il semble donc
-y avoir une "valeure optimale" qui soit différente selon l'implémentation
+y avoir une "valeur optimale" qui soit différente selon l'implémentation
 utilisée.
 
 
@@ -524,7 +524,7 @@ reduction_, le _collaborative loading_...
 Durant tout le déroulement du projet, notre but était d'optimiser les plus gros
 jeux de données disponibles, c'est à dire les tests sur `horse`. Ce choix a été
 fait au vu de l'architecture des GPUs qui favorise les grands ensembles de
-données. Ça se remarque d'ailleurs sur des petits examples comme `cow` où la
+données. Ça se remarque d'ailleurs sur des petits exemples comme `cow` où la
 version GPU est deux fois plus lente. A l'extrême, sur `line`, elle est 57 fois
 plus lente.
 
