@@ -2,8 +2,8 @@
 #include <iostream>
 #include <sys/time.h>
 
-#include "libcpu/icp.hh"
-#include "libgpu/icp.hh"
+#include "../../libcpu/libcpu/icp.hh"
+#include "../../libgpu/libgpu/icp.hh"
 #include "options.hh"
 
 int main(int argc, char* argv[])
