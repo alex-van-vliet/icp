@@ -7,6 +7,13 @@
 namespace libcpu
 {
     /**
+     * @brief Apply the transformation matrix on the point cloud.
+     * @param p The point cloud.
+     * @param transformation The transformation matrix.
+     */
+    void apply_alignment(point_list& p, utils::Matrix<float> transformation);
+
+    /**
      * @brief THE ICP algorithm on CPU.
      * @param m The reference point cloud.
      * @param p The transformed point cloud.
