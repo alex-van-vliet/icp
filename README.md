@@ -2,6 +2,16 @@
 
 CPU & GPU implementations of Iterative Closest Point using a Vantage-Point Tree.
 
+## Examples
+
+### Horse Transformation 1
+
+![Horse Tr 1](https://raw.githubusercontent.com/alex-van-vliet/icp/master/data/horse/images/horse_tr1.gif)
+
+### Horse Transformation 2
+
+![Horse Tr 2](https://raw.githubusercontent.com/alex-van-vliet/icp/master/data/horse/images/horse_tr2.gif)
+
 ## Build
 
 To build the project, run the following commands:
